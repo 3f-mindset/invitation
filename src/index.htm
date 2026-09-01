@@ -1,0 +1,3828 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <title>3F Agency Presentation</title>
+
+    <style>
+        :root {
+            --background: #090909;
+            --background-soft: #121212;
+            --text: #f3f0e9;
+            --muted: #9d988f;
+            --faint: #5f5b55;
+            --border: rgba(255, 255, 255, 0.14);
+            --button-bg: #f3f0e9;
+            --button-text: #111111;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: var(--background);
+            color: var(--text);
+        }
+
+        body {
+            font-family:
+                Inter,
+                ui-sans-serif,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+        }
+
+        #app {
+            position: relative;
+            width: 100%;
+            height: 100dvh;
+            min-height: 100svh;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 50% 43%,
+                    #1a1a1a 0%,
+                    #0d0d0d 46%,
+                    #070707 100%);
+        }
+
+        /* =========================================================
+       SOURCE EDITOR
+       =========================================================
+
+       CONTENT RULES:
+
+       1. Every non-empty line becomes one slide.
+       2. Blank lines are ignored.
+       3. Lightweight formatting:
+          **bold**
+          *italic*
+          __underline__
+          ~~strikethrough~~
+
+       4. Special placeholders:
+
+          [[QR_ON]]
+          Turns on the floating QR/application CTA.
+          It remains visible on following slides.
+
+          [[QR_OFF]]
+          Turns off the floating QR/application CTA.
+
+          [[FINAL_QR]]
+          headline: Your headline here
+          subtext: Your supporting copy here
+          button: Apply for the Crucible
+          [[/FINAL_QR]]
+
+          The FINAL_QR block becomes one special full-page slide.
+          It holds indefinitely.
+
+       ========================================================= */
+
+        #sourceEditorPanel {
+            position: absolute;
+            inset: 0;
+            z-index: 200;
+
+            display: none;
+
+            padding:
+                max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+
+            background: #0a0a0a;
+        }
+
+        #sourceEditorPanel.visible {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        #sourceEditorToolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        #sourceEditorTitle {
+            margin: 0;
+            font-size: 12px;
+            line-height: 1;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        #sourceEditorActions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        #presentationSource {
+            width: 100%;
+            flex: 1 1 auto;
+            min-height: 0;
+
+            resize: none;
+
+            padding: 18px;
+
+            border: 1px solid #2d2d2d;
+            border-radius: 8px;
+
+            outline: none;
+
+            background: #101010;
+            color: #e8e5de;
+
+            font-family:
+                "SFMono-Regular",
+                Consolas,
+                "Liberation Mono",
+                Menlo,
+                monospace;
+
+            font-size: 14px;
+            line-height: 1.55;
+
+            white-space: pre-wrap;
+        }
+
+        #presentationSource:focus {
+            border-color: #66615a;
+        }
+
+        /* =========================================================
+       STAGE
+       ========================================================= */
+
+        #stage {
+            position: absolute;
+            inset: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding:
+                max(62px, env(safe-area-inset-top)) max(30px, env(safe-area-inset-right)) max(108px, env(safe-area-inset-bottom)) max(30px, env(safe-area-inset-left));
+
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+
+            width: min(1100px, calc(100vw - 60px));
+
+            height: min(760px,
+                    calc(100svh - max(62px, env(safe-area-inset-top)) - max(108px, env(safe-area-inset-bottom))));
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            min-width: 0;
+            min-height: 0;
+
+            opacity: 0;
+            visibility: hidden;
+
+            transform: translateY(18px) scale(0.988);
+
+            pointer-events: none;
+
+            transition:
+                opacity 600ms ease,
+                transform 600ms ease,
+                visibility 600ms ease;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+
+        .narrative {
+            width: 100%;
+            max-width: 100%;
+
+            margin: 0;
+
+            color: var(--text);
+
+            font-family:
+                Georgia,
+                "Times New Roman",
+                serif;
+
+            font-size: clamp(34px, 5.2vw, 72px);
+            font-weight: 500;
+
+            line-height: 1.08;
+            letter-spacing: -0.038em;
+
+            overflow-wrap: anywhere;
+            word-break: normal;
+        }
+
+        .narrative strong {
+            font-weight: 800;
+        }
+
+        .narrative em {
+            font-style: italic;
+        }
+
+        .narrative u {
+            text-underline-offset: 0.12em;
+            text-decoration-thickness: 0.05em;
+        }
+
+        .narrative s {
+            opacity: 0.7;
+        }
+
+        /* =========================================================
+       PROGRESS
+       ========================================================= */
+
+        #retentionProgressTrack {
+            position: absolute;
+
+            z-index: 80;
+
+            top: max(18px, env(safe-area-inset-top));
+            left: max(18px, env(safe-area-inset-left));
+            right: max(18px, env(safe-area-inset-right));
+
+            height: 5px;
+
+            overflow: hidden;
+
+            border-radius: 999px;
+
+            background: rgba(255, 255, 255, 0.09);
+
+            pointer-events: none;
+        }
+
+        #retentionProgress {
+            width: 0%;
+            height: 100%;
+
+            border-radius: inherit;
+
+            background:
+                linear-gradient(90deg,
+                    #aaa59c 0%,
+                    #d5d1c7 55%,
+                    #f3f0e9 100%);
+
+            transition:
+                width 110ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* =========================================================
+       FLOATING QR CTA
+       ========================================================= */
+
+        #floatingApplication {
+            position: absolute;
+
+            z-index: 90;
+
+            top: max(38px, calc(env(safe-area-inset-top) + 26px));
+            right: max(16px, env(safe-area-inset-right));
+
+            display: flex;
+            align-items: center;
+
+            gap: 10px;
+
+            max-width: min(370px, calc(100vw - 32px));
+
+            padding: 8px;
+
+            border: 1px solid var(--border);
+            border-radius: 12px;
+
+            background: rgba(11, 11, 11, 0.94);
+
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+
+            opacity: 0;
+            visibility: hidden;
+
+            transform: translateY(-8px);
+
+            pointer-events: none;
+
+            transition:
+                opacity 240ms ease,
+                visibility 240ms ease,
+                transform 240ms ease;
+        }
+
+        #floatingApplication.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        #floatingQrWrap {
+            width: 70px;
+            height: 70px;
+
+            flex: 0 0 70px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 4px;
+
+            border-radius: 7px;
+
+            background: #ffffff;
+
+            overflow: hidden;
+        }
+
+        #floatingQr {
+            display: block;
+
+            width: 100%;
+            height: 100%;
+
+            object-fit: contain;
+        }
+
+        #floatingApplicationBody {
+            min-width: 0;
+
+            display: flex;
+            flex-direction: column;
+
+            gap: 6px;
+        }
+
+        #floatingApplicationLabel {
+            margin: 0;
+
+            color: #aaa59c;
+
+            font-size: 9px;
+            font-weight: 800;
+
+            line-height: 1.25;
+
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        #floatingApplicationButton {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            min-height: 38px;
+
+            padding: 9px 12px;
+
+            border: 1px solid #d8d3ca;
+            border-radius: 5px;
+
+            background: var(--button-bg);
+            color: var(--button-text);
+
+            font-size: 11px;
+            font-weight: 800;
+
+            line-height: 1.1;
+
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+
+            text-align: center;
+            text-decoration: none;
+        }
+
+        /* =========================================================
+       FINAL QR SLIDE
+       ========================================================= */
+
+        .finalQrSlide {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+            gap: 18px;
+
+            text-align: center;
+        }
+
+        .finalQrHeadline {
+            width: min(900px, 100%);
+
+            margin: 0;
+
+            font-family:
+                Georgia,
+                "Times New Roman",
+                serif;
+
+            font-size: clamp(34px, 4.6vw, 58px);
+            font-weight: 500;
+
+            line-height: 1.04;
+            letter-spacing: -0.035em;
+
+            color: var(--text);
+
+            text-align: center;
+            overflow-wrap: anywhere;
+        }
+
+        .finalQrHeadline strong {
+            font-weight: 800;
+        }
+
+        .finalQrHeadline em {
+            font-style: italic;
+        }
+
+        .finalQrHeadline u {
+            text-underline-offset: 0.12em;
+        }
+
+        .finalQrCodeWrap {
+            width: min(300px, 46vw);
+
+            aspect-ratio: 1 / 1;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 12px;
+
+            border-radius: 14px;
+
+            background: #ffffff;
+
+            overflow: hidden;
+
+            flex: 0 0 auto;
+        }
+
+        .finalQrCodeWrap img {
+            display: block;
+
+            width: 100%;
+            height: 100%;
+
+            object-fit: contain;
+        }
+
+        .finalQrButton {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            width: min(440px, 88vw);
+
+            min-height: 56px;
+
+            padding: 14px 20px;
+
+            border: 1px solid #d8d3ca;
+            border-radius: 6px;
+
+            background: var(--button-bg);
+            color: var(--button-text);
+
+            font-size: 14px;
+            font-weight: 800;
+
+            line-height: 1.1;
+
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .finalQrSubtext {
+            width: min(720px, 100%);
+
+            margin: 0;
+
+            color: var(--muted);
+
+            font-size: 13px;
+            line-height: 1.45;
+
+            text-align: center;
+        }
+
+        /* =========================================================
+       CONTROLS
+       ========================================================= */
+
+        #bottomChrome {
+            position: absolute;
+
+            z-index: 100;
+
+            left: max(14px, env(safe-area-inset-left));
+            right: max(14px, env(safe-area-inset-right));
+            bottom: max(12px, env(safe-area-inset-bottom));
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            gap: 7px;
+
+            pointer-events: none;
+        }
+
+        #controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+
+            gap: 7px;
+
+            opacity: 0.35;
+
+            pointer-events: auto;
+
+            transition: opacity 160ms ease;
+        }
+
+        #controls:hover,
+        #controls:focus-within {
+            opacity: 1;
+        }
+
+        button {
+            min-height: 36px;
+
+            padding: 7px 10px;
+
+            border: 1px solid #343434;
+            border-radius: 4px;
+
+            background: rgba(10, 10, 10, 0.9);
+
+            color: #bbb6ac;
+
+            font: inherit;
+
+            font-size: 9px;
+            font-weight: 700;
+
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+
+            cursor: pointer;
+        }
+
+        button:hover,
+        button:focus-visible {
+            color: #ffffff;
+            border-color: #66615a;
+            outline: none;
+        }
+
+        #debugInfo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            gap: 8px;
+
+            color: var(--faint);
+
+            font-size: 8px;
+            font-weight: 700;
+
+            line-height: 1;
+
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+
+            pointer-events: none;
+        }
+
+        #debugDivider {
+            width: 3px;
+            height: 3px;
+
+            border-radius: 50%;
+
+            background: #4a4742;
+        }
+
+        /* =========================================================
+       MOBILE
+       ========================================================= */
+
+        @media (max-width: 700px) {
+            #stage {
+                padding:
+                    max(52px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(96px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+            }
+
+            .slide {
+                width: calc(100vw - 36px);
+
+                height: calc(100svh - max(52px, env(safe-area-inset-top)) - max(96px, env(safe-area-inset-bottom)));
+            }
+
+            .narrative {
+                font-size: clamp(30px, 10vw, 56px);
+            }
+
+            #retentionProgressTrack {
+                top: max(13px, env(safe-area-inset-top));
+                left: max(14px, env(safe-area-inset-left));
+                right: max(14px, env(safe-area-inset-right));
+
+                height: 4px;
+            }
+
+            #floatingApplication {
+                top: max(30px, calc(env(safe-area-inset-top) + 20px));
+                right: max(10px, env(safe-area-inset-right));
+
+                max-width: min(270px, calc(100vw - 20px));
+
+                gap: 7px;
+                padding: 6px;
+            }
+
+            #floatingQrWrap {
+                width: 52px;
+                height: 52px;
+                flex-basis: 52px;
+            }
+
+            #floatingApplicationLabel {
+                font-size: 7px;
+            }
+
+            #floatingApplicationButton {
+                min-height: 34px;
+
+                padding: 7px 9px;
+
+                font-size: 9px;
+            }
+
+            .finalQrSlide {
+                gap: 12px;
+            }
+
+            .finalQrHeadline {
+                font-size: clamp(28px, 8vw, 42px);
+            }
+
+            .finalQrCodeWrap {
+                width: min(220px, 52vw);
+            }
+
+            .finalQrButton {
+                min-height: 48px;
+
+                font-size: 11px;
+
+                padding: 11px 14px;
+            }
+
+            .finalQrSubtext {
+                font-size: 10px;
+            }
+
+            #bottomChrome {
+                bottom: max(8px, env(safe-area-inset-bottom));
+            }
+
+            #controls {
+                gap: 4px;
+            }
+
+            button {
+                min-height: 32px;
+
+                padding: 6px 7px;
+
+                font-size: 7px;
+            }
+
+            #debugInfo {
+                font-size: 7px;
+            }
+
+            #presentationSource {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-height: 620px) {
+            #stage {
+                padding-top: 46px;
+                padding-bottom: 78px;
+            }
+
+            .slide {
+                height: calc(100svh - 124px);
+            }
+
+            #floatingApplication {
+                top: 24px;
+            }
+
+            #floatingQrWrap {
+                width: 44px;
+                height: 44px;
+                flex-basis: 44px;
+            }
+
+            .finalQrSlide {
+                gap: 7px;
+            }
+
+            .finalQrHeadline {
+                font-size: 28px;
+            }
+
+            .finalQrCodeWrap {
+                width: 135px;
+            }
+
+            .finalQrButton {
+                min-height: 36px;
+                padding: 7px 10px;
+            }
+
+            .finalQrSubtext {
+                font-size: 9px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main id="app">
+
+        <!-- =======================================================
+         EDITABLE PLAIN-TEXT PRESENTATION SOURCE
+         Every non-empty line = one normal slide.
+         ======================================================= -->
+
+        <section id="sourceEditorPanel">
+            <div id="sourceEditorToolbar">
+
+                <p id="sourceEditorTitle">
+                    Presentation Source
+                </p>
+
+                <div id="sourceEditorActions">
+                    <button id="applySourceButton" type="button">
+                        Apply Changes
+                    </button>
+
+                    <button id="closeEditorButton" type="button">
+                        Close Editor
+                    </button>
+                </div>
+
+            </div>
+
+            <textarea id="presentationSource" spellcheck="true">There is a good chance you already know something in your life is not working the way it should.
+Not because everything is falling apart.
+In fact, from the outside, you may look completely functional.
+You may work hard.
+You may carry responsibility.
+You may have people depending on you.
+But you also know where the gaps are.
+You know where you keep making the same promises to yourself.
+You know where your attention keeps getting pulled away from what matters.
+You know where you keep saying tomorrow will be different.
+Or Monday.
+Or next month.
+Or when life finally slows down.
+The question is not whether you are capable.
+The question is where your agency is breaking right now.
+
+One man cannot get moving at all.
+Another man moves constantly, but nothing lasts.
+Another man has structure.
+But his standards disappear when life gets hard.
+And another man can already lead himself.
+Now he is asking what all that strength is for.
+Ask which one sounds uncomfortably familiar.
+
+Maybe you wake up already behind.
+Your phone gets your attention before your priorities do.
+The hard thing gets pushed away.
+There is always something easier to do first.
+You stay busy.
+But you cannot point to enough real progress.
+If that sounds like you, the real problem may not be laziness.
+Nothing important has enough authority over your life yet.
+You have energy.
+But it does not have one clear direction.
+That is The Unlit.
+Your problem is drift.
+Your constraint is direction.
+
+Or maybe you have plenty of energy.
+You build a plan.
+You start hard.
+And you believe this time will be different.
+Then work gets heavy.
+The routine gets hard.
+The plan starts breaking.
+So you start over again.
+You are not short on fire.
+The fire keeps escaping the system.
+That is The Burning.
+Your problem is chaos.
+Your constraint is control.
+
+Or maybe you already have a plan.
+You train.
+You work.
+You keep routines.
+You finish most of what you start.
+Your problem shows up when life gets hard.
+When you are tired.
+Traveling.
+Busy.
+Frustrated.
+Or when nobody is watching.
+That is The Directed.
+Your constraint is integrity.
+Does your behavior still agree with your word when life stops being easy?
+
+And maybe you can already trust yourself.
+You know what matters.
+Your life supports it.
+You know how to return when you drift.
+Now a different question starts to matter.
+What is all this strength for?
+That is The Forged.
+Your frontier is impact.
+
+So the real question is not whether you need more information.
+It is where your agency is breaking down right now.
+Agency has to be built.
+And the path is simpler than it may sound.
+
+It comes down to **three capacities**.
+Direction.
+Control.
+Integrity.
+
+Before we go any further, I want to be clear about what I mean by *capacity*.
+A capacity is something you are able to carry.
+Not something you understand.
+Something you can actually do.
+
+You may understand focus.
+But how much distraction can you handle before you lose direction?
+You may understand boundaries.
+But how much pressure can your schedule take before everything gets access to you again?
+You may understand discipline.
+But how tired, busy, frustrated, or uncomfortable can you become before your standard changes?
+
+**That is capacity.**
+It is the amount of life you can carry without losing your shape.
+
+And capacity can grow.
+The same way your body develops a larger range through training.
+
+That is where the **stretches** come in.
+
+A stretch is a small piece of work that takes you just beyond the way you normally operate.
+Think about stretching your body.
+You are not trying to tear the muscle apart.
+You are asking it for a little more range than it has today.
+Then you recover.
+You do it again.
+And eventually that new range starts to feel normal.
+
+The work here operates the same way.
+
+One stretch may ask you to make a decision you have been avoiding.
+Another may ask you to protect time you normally give away.
+Another may ask you to keep your word when you are tired and would normally negotiate with yourself.
+
+None of these stretches are enormous by themselves.
+That is the point.
+
+You do the work.
+You get the reps.
+You produce proof.
+Then your operating range gets a little larger.
+
+Over twelve weeks, we use three stretches to build each of the three capacities.
+Three stretches for direction.
+Three stretches for control.
+Three stretches for integrity.
+
+Nine stretches altogether.
+But the goal is not to finish nine assignments.
+The goal is to become capable of operating differently than you can today.
+
+**Capacity One: Direction.**
+
+Direction is your ability to decide where your life is going.
+And keep your choices pointed toward it.
+
+We build that capacity through three stretches.
+
+The first stretch is **Name the Aim**.
+You choose what matters enough to organize the next season around.
+
+Think about getting into a car without choosing a destination.
+You can drive fast.
+You can keep the tank full.
+You can stay busy all day.
+But movement is not the same as progress.
+
+Naming the aim is like putting the destination into the map.
+Now you have somewhere to point your energy.
+
+That is your first stretch.
+**Choose.**
+
+The second stretch is **Cut the Options**.
+Once you know where you are going, you stop feeding paths that compete with it.
+
+Think about having ten tabs open on your computer.
+Each tab uses a little power.
+Soon the whole machine slows down.
+
+Closing tabs does not make the computer weaker.
+It frees power for the work that matters.
+
+That is your second stretch.
+**Eliminate.**
+
+The third stretch is **Build the Compass**.
+You create simple rules that help everyday choices agree with the direction you chose.
+
+Think about the lines on a road.
+They do not drive the car.
+They simply make it obvious when you are leaving the lane.
+
+Your rules do the same thing.
+
+That is your third stretch.
+**Decide before the moment decides for you.**
+
+Those three stretches expand your capacity for direction.
+Name what matters.
+Cut what competes with it.
+Build rules that keep you pointed toward it.
+
+That is how drift becomes direction.
+
+**Capacity Two: Control.**
+
+Control is your ability to protect what matters.
+From everything trying to gain access to you.
+
+Because choosing a direction is not enough.
+Your life has to be able to hold it.
+
+We build that capacity through another three stretches.
+
+The first stretch is **Clean the Charge**.
+You become more deliberate about what enters your mind and body.
+
+Think about feeding junk into a strong engine.
+The engine may still run.
+But it cannot perform the way it was built to perform.
+
+Your system works the same way.
+
+News.
+Social media.
+Food.
+Noise.
+Entertainment.
+Arguments.
+Gossip.
+People.
+
+All of it enters somewhere.
+
+This stretch asks you to clean up the fuel.
+
+The second stretch is **Build the Walls**.
+You put boundaries around your time, attention, and energy.
+
+Think about water moving through a hose.
+Put enough holes in the hose and very little reaches the end.
+
+Your attention works the same way.
+Every unnecessary interruption creates another leak.
+
+Boundaries close the holes.
+They work like the walls of a furnace.
+
+The walls do not make the fire.
+They keep the heat where it belongs.
+
+The third stretch is **Control the Pressure**.
+You build space between what you feel and what you do.
+
+Pressure will still come.
+Anger.
+Stress.
+Fear.
+Fatigue.
+Frustration.
+
+But the feeling does not have to choose the action.
+
+Think about a pressure valve.
+The pressure is real.
+But it is managed before it damages the system.
+
+Those three stretches expand your capacity for control.
+Control what enters.
+Protect what matters.
+Choose your response instead of reacting.
+
+That is how chaos becomes control.
+
+**Capacity Three: Integrity.**
+
+Integrity is your ability to keep your behavior aligned with your word.
+Even when conditions change.
+
+This is where what you say matters has to survive real life.
+
+We build that capacity through the final three stretches.
+
+The first stretch is **Fix the Anvil**.
+You give an important behavior a fixed time.
+A fixed place.
+A trigger.
+And a minimum standard.
+
+Think about brushing your teeth when you were young.
+At first, someone reminded you.
+Same place.
+Same general time.
+Again and again.
+
+Eventually the outside rule became an inside standard.
+
+That fixed structure works like an anvil.
+The steel can change because the surface underneath it does not move.
+
+The second stretch is **Swing the Hammer**.
+You repeat the behavior that creates the result.
+Again.
+And again.
+And again.
+
+Think about learning to throw a ball.
+Or play an instrument.
+
+At first, every movement takes thought.
+Eventually repetition changes you.
+
+One hammer strike leaves a mark.
+Repeated strikes change the shape.
+
+The third stretch is **Stress Test the Standard**.
+Now you take the behavior into real resistance.
+
+You keep your word when you are tired.
+Busy.
+Traveling.
+Frustrated.
+Distracted.
+Or unseen.
+
+Think about learning to swim in a calm pool.
+Then imagine moving into open water.
+
+Now there are waves.
+Wind.
+Current.
+
+That is when you discover whether the skill really belongs to you.
+
+A blade works the same way.
+It can look sharp sitting on a table.
+Resistance tells you whether it actually holds.
+
+Those three stretches expand your capacity for integrity.
+Fix the behavior in place.
+Repeat it until it begins shaping you.
+Then prove it survives real life.
+
+That is how inconsistency becomes integrity.
+
+So the framework is simple.
+
+**Three capacities.**
+Direction.
+Control.
+Integrity.
+
+And three stretches inside each capacity.
+
+You stretch your ability to choose.
+You stretch your ability to protect.
+You stretch your ability to follow through.
+
+And each time you stretch, the goal is the same.
+
+Do the work.
+Get the reps.
+Produce proof.
+Expand your range.
+
+Because agency is not knowing more about how you should live.
+Agency is becoming capable of directing more of your life.
+
+Capable of carrying more pressure.
+Capable of keeping your shape when conditions change.
+
+That is what these stretches are designed to build.
+
+And now you know what the work looks like.
+You know the three capacities.
+You know the stretches that build each one.
+You know what has to change.
+
+But there is still a problem.
+
+You have probably known what to do before.
+You have read books before.
+You have watched videos before.
+You have made plans before.
+You have promised yourself this time would be different.
+
+Instructions were never the whole problem.
+Knowing was never the whole problem.
+
+The problem was doing the work when life got hard.
+
+The problem was seeing yourself drift.
+And still letting it happen.
+
+The problem was making a promise in private.
+Then quietly changing it later.
+
+The problem was having nobody there.
+Especially when the excuse started sounding reasonable.
+
+So understanding the three capacities is useful.
+But understanding them is not the same as building them.
+
+Capacity grows through use.
+It grows through resistance.
+It grows through reps.
+It grows through being stretched.
+
+And doing that alone is where a lot of men keep getting stuck.
+
+That is why we put together
+a **12-week program**
+for men who want to build more direction, control, and integrity
+without trying to figure everything out by themselves
+so they can become
+**men whose actions carry the same weight as their words.**
+
+It is not another course to watch.
+It is not another stack of information.
+
+And it is not twelve weeks of men
+sitting around talking about what they should do.
+
+It is twelve weeks of doing the work.
+**Together.**
+
+You work through the three capacities.
+Direction.
+Control.
+Integrity.
+
+One capacity at a time.
+One stretch at a time.
+
+With direct guidance on the work in front of you.
+With a clear standard for what done looks like.
+With reps that happen in your actual life.
+With proof that something actually changed.
+
+With real commitments.
+Commitments other men know you made.
+
+And with accountability when your actions stop matching your words.
+
+The men in the program have different lives.
+Different jobs.
+Different families.
+Different pressures.
+Different places where they struggle.
+
+But they are stretching toward the same thing.
+
+More direction.
+More control.
+More integrity.
+More agency.
+
+That shared work matters.
+
+Because it is easy to explain your own excuse to yourself.
+It is harder when another man can see the gap.
+
+It is easy to disappear for a week.
+Especially when nobody is waiting for you.
+
+It is harder when men beside you know what you said you would do.
+
+That does not mean shame.
+It means **ownership**.
+
+You made the commitment.
+You said it mattered.
+
+Now there are men around you.
+Men who expect your actions to match your words.
+
+And you are doing the same for them.
+
+You will see other men get stretched.
+You will see them struggle.
+You will see them get corrected.
+You will see them return.
+You will see them keep going when the feeling is gone.
+
+And they will see the same thing in you.
+
+That is where the group becomes more than a program.
+
+It becomes a brotherhood built around shared work.
+
+Not men sitting around talking about becoming stronger.
+Men in the trenches expanding what they are capable of carrying.
+
+The three capacities give the work a direction.
+The stretches give you something concrete to do.
+The reps help the behavior stick.
+The proof tells you something actually changed.
+The guidance helps you apply the work to your real life.
+The accountability makes hiding harder.
+
+And the men beside you remind you of something important.
+
+**You are not carrying the standard alone.**
+
+We run this 12-week program in cycles.
+
+A group of men enters together.
+They work through the same three capacities together.
+They complete the stretches together.
+And they finish with real evidence that they can operate differently than they could twelve weeks earlier.
+
+We call each cycle a **Crucible**.
+
+And we will be starting the next Crucible in a few weeks.
+
+If you are tired of knowing what to do
+and still failing to do it consistently,
+this is what the Crucible is built for.
+
+If you are tired of starting over by yourself,
+this is what the Crucible is built for.
+
+If you want direct guidance instead of more guessing,
+this is what the Crucible is built for.
+
+If you want men beside you doing the same hard work,
+this is what the Crucible is built for.
+
+The goal is not to finish nine stretches.
+
+The goal is to expand what you are capable of.
+
+More capacity to choose.
+More capacity to govern yourself.
+More capacity to keep your word under pressure.
+More capacity to carry life without losing your shape.
+
+If that is the man you are ready to become,
+apply for the next Crucible.
+
+The application helps us understand where you are.
+Where your capacity is breaking down.
+What keeps getting in the way.
+And whether this is the right environment for you.
+
+If there is a good fit,
+someone from our team will reach out
+and walk you through the next steps.
+
+[[QR_ON]]
+
+Before you decide, you may have a few questions.
+
+You may be thinking, **I am already busy.**
+Do I really have time for this?
+
+That is one reason accountability matters.
+
+You do not need another thing competing for your attention.
+
+You need help protecting the things you already said matter.
+
+The work is meant to remove noise.
+Build structure.
+And make better use of the time you already have.
+
+You may be thinking, **I already know what I need to do.**
+
+Good.
+
+Then you already understand why more instructions may not be enough.
+
+The gap is not between you and another idea.
+
+The gap is between what you know and what you keep doing.
+
+The program puts direct guidance around that gap.
+Ownership around that gap.
+Accountability around that gap.
+And other men around that gap.
+
+You may be thinking, **I should be able to do this by myself.**
+
+Maybe you can.
+
+The question is whether doing it alone has been working.
+
+If you have had the same conversation with yourself for months,
+you already have evidence.
+
+Brotherhood does not mean another man carries your weight.
+
+It means other men are there while you learn to carry it.
+
+You may be thinking, **what if I start and fall off again?**
+
+Then we found the exact problem we are here to work on.
+
+The goal is not to create a man who never misses.
+
+The goal is to create a man who knows how to return.
+
+Before one miss becomes a collapse.
+
+And returning is easier when you are not disappearing alone.
+
+The men around you can see when you drift.
+
+They can call you back to the standard.
+
+Before one bad day becomes another lost month.
+
+You may be thinking, **I do not want a group where men just sit around talking.**
+
+Neither do we.
+
+The point is the work.
+
+A capacity.
+A stretch.
+A commitment.
+Reps.
+Proof.
+Review.
+Correction.
+Then the next stretch.
+
+The brotherhood matters because the men are doing the work beside you.
+
+You may be thinking, **what if I do not know anyone in the group?**
+
+You do not need to arrive with friends.
+
+The common ground is the work.
+
+Every man is there because there is a gap.
+
+A gap between the life he wants to lead
+and the life his current behavior is creating.
+
+You earn trust by showing up.
+Doing the work.
+Owning the misses.
+And returning.
+
+You may be thinking, **what if the other men are ahead of me?**
+
+Then you get to see what a larger capacity looks like.
+
+And if another man is behind you,
+you may help him see something you already learned.
+
+The goal is not comparison.
+
+The goal is shared progress toward a stronger standard.
+
+You may be thinking, **what if my schedule changes all the time?**
+
+Then your standard has to work in real life.
+
+Not only on perfect weeks.
+
+That is why integrity has to be stretched under pressure.
+
+A routine that only works when life is easy is not dependable yet.
+
+The point is to build something that survives pressure.
+
+You may be thinking, **is this just another motivation program?**
+
+No.
+
+Motivation can help you start.
+
+This program is built around what happens after motivation leaves.
+
+Direction.
+Control.
+Integrity.
+Accountability.
+Pressure.
+Correction.
+Proof.
+
+You may be thinking, **what does accountability actually mean?**
+
+It means your commitment does not disappear when it becomes inconvenient.
+
+It means other men know what you said you would do.
+
+It means you own the result.
+
+If you did it, you bring the proof.
+
+If you did not, you bring the truth.
+
+Then you learn.
+Correct.
+And return.
+
+You may be thinking, **how do I know if I am a good fit?**
+
+You do not have to decide that alone.
+
+That is why there is an application.
+
+Tell us where you are.
+What you are trying to change.
+And where you keep getting stuck.
+
+If there is a fit,
+someone from our team will reach out.
+
+The biggest question is not whether you can keep living the way you are.
+
+You probably can.
+
+The question is what another year of trying to do it alone will cost you.
+
+Another year of knowing what to do.
+Another year of starting over.
+Another year of promises that only you hear.
+Another year of lowering the weight of your own word.
+
+You already understand the three capacities.
+
+The question is whether you are ready to stretch them.
+
+With men doing the same work beside you.
+
+If you are,
+apply.
+
+[[FINAL_QR]]
+headline: **Stop starting over alone.**
+subtext: Build Direction, Control, and Integrity through nine practical stretches, direct guidance, real accountability, and men doing the work beside you.
+button: Apply for the Crucible
+[[/FINAL_QR]]</textarea>
+        </section>
+
+        <!-- =======================================================
+         PRESENTATION
+         ======================================================= -->
+
+        <section id="stage"></section>
+
+        <div id="retentionProgressTrack">
+            <div id="retentionProgress"></div>
+        </div>
+
+        <div id="floatingApplication" aria-hidden="true">
+            <div id="floatingQrWrap">
+                <img id="floatingQr" alt="Crucible application QR code" />
+            </div>
+
+            <div id="floatingApplicationBody">
+
+                <p id="floatingApplicationLabel">
+                    Do the work with other men.
+                </p>
+
+                <a id="floatingApplicationButton" href="#" target="_blank" rel="noopener noreferrer">
+                    Apply for the Crucible
+                </a>
+
+            </div>
+        </div>
+
+        <div id="bottomChrome">
+
+            <div id="controls">
+
+                <button id="previousButton" type="button">
+                    Previous
+                </button>
+
+                <button id="playButton" type="button">
+                    Pause
+                </button>
+
+                <button id="nextButton" type="button">
+                    Next
+                </button>
+
+                <button id="restartButton" type="button">
+                    Restart
+                </button>
+
+                <button id="editSourceButton" type="button">
+                    Edit Text
+                </button>
+
+            </div>
+
+            <div id="debugInfo">
+
+                <span id="counter">
+                    01 / 01
+                </span>
+
+                <span id="debugDivider"></span>
+
+                <span id="timing">
+                    0 syllables · 0 ms
+                </span>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <script>
+        const CONFIG = {
+            /*
+              Replace with the real application URL.
+            */
+            applicationUrl:
+                "https://example.com/crucible-application",
+
+            /*
+              Timing model:
+              base + syllables * weight
+            */
+            baseDelayMs:
+                2400,
+
+            syllableWeightMs:
+                115,
+
+            playbackSpeed:
+                1,
+
+            minimumDelayMs:
+                1500,
+
+            maximumDelayMs:
+                18000,
+
+            /*
+              Progress fills faster near the beginning.
+            */
+            progressCurveStrength:
+                15
+        };
+
+
+        const stage =
+            document.getElementById(
+                "stage"
+            );
+
+
+        const sourceEditorPanel =
+            document.getElementById(
+                "sourceEditorPanel"
+            );
+
+
+        const sourceTextarea =
+            document.getElementById(
+                "presentationSource"
+            );
+
+
+        const applySourceButton =
+            document.getElementById(
+                "applySourceButton"
+            );
+
+
+        const closeEditorButton =
+            document.getElementById(
+                "closeEditorButton"
+            );
+
+
+        const editSourceButton =
+            document.getElementById(
+                "editSourceButton"
+            );
+
+
+        const floatingApplication =
+            document.getElementById(
+                "floatingApplication"
+            );
+
+
+        const floatingQr =
+            document.getElementById(
+                "floatingQr"
+            );
+
+
+        const floatingApplicationButton =
+            document.getElementById(
+                "floatingApplicationButton"
+            );
+
+
+        const retentionProgress =
+            document.getElementById(
+                "retentionProgress"
+            );
+
+
+        const previousButton =
+            document.getElementById(
+                "previousButton"
+            );
+
+
+        const playButton =
+            document.getElementById(
+                "playButton"
+            );
+
+
+        const nextButton =
+            document.getElementById(
+                "nextButton"
+            );
+
+
+        const restartButton =
+            document.getElementById(
+                "restartButton"
+            );
+
+
+        const counter =
+            document.getElementById(
+                "counter"
+            );
+
+
+        const timing =
+            document.getElementById(
+                "timing"
+            );
+
+
+        let slides =
+            [];
+
+
+        let currentIndex =
+            0;
+
+
+        let isPlaying =
+            true;
+
+
+        let slideTimer =
+            null;
+
+
+        let progressFrame =
+            null;
+
+
+        let activeDelay =
+            0;
+
+
+        let slideStartedAt =
+            0;
+
+
+        /*
+          ==========================================================
+          TEXT FORMATTING
+          ==========================================================
+    
+          Supports:
+    
+          **bold**
+          *italic*
+          __underline__
+          ~~strikethrough~~
+    
+          HTML from the textarea itself is escaped first.
+          ==========================================================
+        */
+
+
+        function escapeHtml(
+            value
+        ) {
+
+            return value
+                .replace(
+                    /&/g,
+                    "&amp;"
+                )
+                .replace(
+                    /</g,
+                    "&lt;"
+                )
+                .replace(
+                    />/g,
+                    "&gt;"
+                )
+                .replace(
+                    /"/g,
+                    "&quot;"
+                )
+                .replace(
+                    /'/g,
+                    "&#039;"
+                );
+        }
+
+
+        function renderInlineFormatting(
+            raw
+        ) {
+
+            let text =
+                escapeHtml(
+                    raw
+                );
+
+
+            /*
+              Bold first.
+            */
+            text =
+                text.replace(
+                    /\*\*(.+?)\*\*/g,
+                    "<strong>$1</strong>"
+                );
+
+
+            /*
+              Underline.
+            */
+            text =
+                text.replace(
+                    /__(.+?)__/g,
+                    "<u>$1</u>"
+                );
+
+
+            /*
+              Strikethrough.
+            */
+            text =
+                text.replace(
+                    /~~(.+?)~~/g,
+                    "<s>$1</s>"
+                );
+
+
+            /*
+              Italic last.
+            */
+            text =
+                text.replace(
+                    /(^|[^*])\*([^*\n]+?)\*(?!\*)/g,
+                    "$1<em>$2</em>"
+                );
+
+
+            return text;
+        }
+
+
+        /*
+          ==========================================================
+          SOURCE PARSER
+          ==========================================================
+    
+          Every non-empty normal line becomes a slide.
+    
+          Special commands:
+    
+          [[QR_ON]]
+          [[QR_OFF]]
+    
+          [[FINAL_QR]]
+          headline: ...
+          subtext: ...
+          button: ...
+          [[/FINAL_QR]]
+          ==========================================================
+        */
+
+
+        function parsePresentationSource(
+            source
+        ) {
+
+            const lines =
+                source
+                    .replace(
+                        /\r\n/g,
+                        "\n"
+                    )
+                    .replace(
+                        /\r/g,
+                        "\n"
+                    )
+                    .split(
+                        "\n"
+                    );
+
+
+            const parsed =
+                [];
+
+
+            let qrVisible =
+                false;
+
+
+            let insideFinalQr =
+                false;
+
+
+            let finalQrData =
+                null;
+
+
+            for (
+                let index = 0;
+                index < lines.length;
+                index += 1
+            ) {
+
+                const rawLine =
+                    lines[
+                    index
+                    ];
+
+
+                const line =
+                    rawLine.trim();
+
+
+                if (
+                    insideFinalQr
+                ) {
+
+                    if (
+                        line ===
+                        "[[/FINAL_QR]]"
+                    ) {
+
+                        parsed.push({
+                            type:
+                                "finalQr",
+
+                            qrVisible:
+                                false,
+
+                            headline:
+                                finalQrData.headline ||
+                                "Apply for the Crucible",
+
+                            subtext:
+                                finalQrData.subtext ||
+                                "",
+
+                            button:
+                                finalQrData.button ||
+                                "Apply for the Crucible",
+
+                            indefinite:
+                                true
+                        });
+
+
+                        insideFinalQr =
+                            false;
+
+
+                        finalQrData =
+                            null;
+
+
+                        continue;
+                    }
+
+
+                    const colonIndex =
+                        line.indexOf(
+                            ":"
+                        );
+
+
+                    if (
+                        colonIndex >
+                        -1
+                    ) {
+
+                        const key =
+                            line
+                                .slice(
+                                    0,
+                                    colonIndex
+                                )
+                                .trim()
+                                .toLowerCase();
+
+
+                        const value =
+                            line
+                                .slice(
+                                    colonIndex +
+                                    1
+                                )
+                                .trim();
+
+
+                        if (
+                            key ===
+                            "headline"
+                        ) {
+
+                            finalQrData.headline =
+                                value;
+
+                        } else if (
+                            key ===
+                            "subtext"
+                        ) {
+
+                            finalQrData.subtext =
+                                value;
+
+                        } else if (
+                            key ===
+                            "button"
+                        ) {
+
+                            finalQrData.button =
+                                value;
+                        }
+                    }
+
+
+                    continue;
+                }
+
+
+                if (
+                    line ===
+                    ""
+                ) {
+
+                    continue;
+                }
+
+
+                if (
+                    line ===
+                    "[[QR_ON]]"
+                ) {
+
+                    qrVisible =
+                        true;
+
+                    continue;
+                }
+
+
+                if (
+                    line ===
+                    "[[QR_OFF]]"
+                ) {
+
+                    qrVisible =
+                        false;
+
+                    continue;
+                }
+
+
+                if (
+                    line ===
+                    "[[FINAL_QR]]"
+                ) {
+
+                    insideFinalQr =
+                        true;
+
+
+                    finalQrData = {
+                        headline:
+                            "",
+
+                        subtext:
+                            "",
+
+                        button:
+                            ""
+                    };
+
+
+                    continue;
+                }
+
+
+                parsed.push({
+                    type:
+                        "text",
+
+                    text:
+                        line,
+
+                    qrVisible:
+                        qrVisible,
+
+                    indefinite:
+                        false
+                });
+            }
+
+
+            /*
+              Graceful fallback if the final block
+              was opened but not explicitly closed.
+            */
+
+            if (
+                insideFinalQr &&
+                finalQrData
+            ) {
+
+                parsed.push({
+                    type:
+                        "finalQr",
+
+                    qrVisible:
+                        false,
+
+                    headline:
+                        finalQrData.headline ||
+                        "Apply for the Crucible",
+
+                    subtext:
+                        finalQrData.subtext ||
+                        "",
+
+                    button:
+                        finalQrData.button ||
+                        "Apply for the Crucible",
+
+                    indefinite:
+                        true
+                });
+            }
+
+
+            return parsed;
+        }
+
+
+        /*
+          ==========================================================
+          SLIDE RENDERING
+          ==========================================================
+        */
+
+
+        function createTextSlide(
+            slideData
+        ) {
+
+            const slide =
+                document.createElement(
+                    "article"
+                );
+
+
+            slide.className =
+                "slide";
+
+
+            slide.dataset.type =
+                "text";
+
+
+            slide.dataset.qrVisible =
+                slideData.qrVisible
+                    ? "true"
+                    : "false";
+
+
+            const narrative =
+                document.createElement(
+                    "p"
+                );
+
+
+            narrative.className =
+                "narrative";
+
+
+            narrative.innerHTML =
+                renderInlineFormatting(
+                    slideData.text
+                );
+
+
+            slide.appendChild(
+                narrative
+            );
+
+
+            return slide;
+        }
+
+
+        function createFinalQrSlide(
+            slideData
+        ) {
+
+            const slide =
+                document.createElement(
+                    "article"
+                );
+
+
+            slide.className =
+                "slide finalQrSlide";
+
+
+            slide.dataset.type =
+                "finalQr";
+
+
+            slide.dataset.qrVisible =
+                "false";
+
+
+            slide.dataset.indefinite =
+                "true";
+
+
+            const headline =
+                document.createElement(
+                    "p"
+                );
+
+
+            headline.className =
+                "finalQrHeadline";
+
+
+            headline.innerHTML =
+                renderInlineFormatting(
+                    slideData.headline
+                );
+
+
+            const qrWrap =
+                document.createElement(
+                    "div"
+                );
+
+
+            qrWrap.className =
+                "finalQrCodeWrap";
+
+
+            const qrImage =
+                document.createElement(
+                    "img"
+                );
+
+
+            qrImage.className =
+                "finalQrImage";
+
+
+            qrImage.alt =
+                "Crucible application QR code";
+
+
+            qrWrap.appendChild(
+                qrImage
+            );
+
+
+            const button =
+                document.createElement(
+                    "a"
+                );
+
+
+            button.className =
+                "finalQrButton";
+
+
+            button.href =
+                CONFIG.applicationUrl;
+
+
+            button.target =
+                "_blank";
+
+
+            button.rel =
+                "noopener noreferrer";
+
+
+            button.textContent =
+                slideData.button;
+
+
+            const subtext =
+                document.createElement(
+                    "p"
+                );
+
+
+            subtext.className =
+                "finalQrSubtext";
+
+
+            subtext.innerHTML =
+                renderInlineFormatting(
+                    slideData.subtext
+                );
+
+
+            slide.appendChild(
+                headline
+            );
+
+
+            slide.appendChild(
+                qrWrap
+            );
+
+
+            slide.appendChild(
+                button
+            );
+
+
+            if (
+                slideData.subtext
+            ) {
+
+                slide.appendChild(
+                    subtext
+                );
+            }
+
+
+            return slide;
+        }
+
+
+        function rebuildPresentation(
+            preserveIndex =
+                false
+        ) {
+
+            stopPlaybackTimers();
+
+
+            const previousIndex =
+                currentIndex;
+
+
+            const parsed =
+                parsePresentationSource(
+                    sourceTextarea.value
+                );
+
+
+            stage.innerHTML =
+                "";
+
+
+            parsed.forEach(
+                slideData => {
+
+                    let element;
+
+
+                    if (
+                        slideData.type ===
+                        "finalQr"
+                    ) {
+
+                        element =
+                            createFinalQrSlide(
+                                slideData
+                            );
+
+                    } else {
+
+                        element =
+                            createTextSlide(
+                                slideData
+                            );
+                    }
+
+
+                    stage.appendChild(
+                        element
+                    );
+                }
+            );
+
+
+            slides =
+                Array.from(
+                    stage.querySelectorAll(
+                        ".slide"
+                    )
+                );
+
+
+            setupApplicationLinks();
+
+
+            if (
+                preserveIndex
+            ) {
+
+                currentIndex =
+                    Math.min(
+                        previousIndex,
+                        Math.max(
+                            0,
+                            slides.length -
+                            1
+                        )
+                    );
+
+            } else {
+
+                currentIndex =
+                    0;
+            }
+
+
+            isPlaying =
+                true;
+
+
+            playButton.textContent =
+                "Pause";
+
+
+            showSlide(
+                currentIndex
+            );
+        }
+
+
+        /*
+          ==========================================================
+          QR
+          ==========================================================
+        */
+
+
+        function getQrUrl() {
+
+            return (
+                "https://api.qrserver.com/v1/create-qr-code/" +
+                "?size=700x700" +
+                "&margin=16" +
+                "&data=" +
+                encodeURIComponent(
+                    CONFIG.applicationUrl
+                )
+            );
+        }
+
+
+        function setupApplicationLinks() {
+
+            const qrUrl =
+                getQrUrl();
+
+
+            floatingQr.src =
+                qrUrl;
+
+
+            floatingApplicationButton.href =
+                CONFIG.applicationUrl;
+
+
+            document
+                .querySelectorAll(
+                    ".finalQrImage"
+                )
+                .forEach(
+                    image => {
+
+                        image.src =
+                            qrUrl;
+                    }
+                );
+
+
+            document
+                .querySelectorAll(
+                    ".finalQrButton"
+                )
+                .forEach(
+                    button => {
+
+                        button.href =
+                            CONFIG.applicationUrl;
+                    }
+                );
+        }
+
+
+        function updateFloatingQr() {
+
+            const currentSlide =
+                slides[
+                currentIndex
+                ];
+
+
+            const shouldShow =
+                currentSlide &&
+                currentSlide.dataset.qrVisible ===
+                "true";
+
+
+            floatingApplication
+                .classList
+                .toggle(
+                    "visible",
+                    Boolean(
+                        shouldShow
+                    )
+                );
+
+
+            floatingApplication
+                .setAttribute(
+                    "aria-hidden",
+                    shouldShow
+                        ? "false"
+                        : "true"
+                );
+        }
+
+
+        /*
+          ==========================================================
+          SYLLABLE TIMING
+          ==========================================================
+        */
+
+
+        function cleanWord(
+            word
+        ) {
+
+            return word
+                .toLowerCase()
+                .replace(
+                    /[^a-z']/g,
+                    ""
+                )
+                .replace(
+                    /^'+|'+$/g,
+                    ""
+                );
+        }
+
+
+        function countWordSyllables(
+            rawWord
+        ) {
+
+            const word =
+                cleanWord(
+                    rawWord
+                );
+
+
+            if (
+                !word
+            ) {
+
+                return 0;
+            }
+
+
+            if (
+                word.length <=
+                3
+            ) {
+
+                return 1;
+            }
+
+
+            const exceptions = {
+                agency: 3,
+                integrity: 4,
+                direction: 3,
+                control: 2,
+                chaos: 2,
+                pressure: 2,
+                capacity: 4,
+                capacities: 4,
+                accountability: 6,
+                brotherhood: 3,
+                crucible: 3,
+                community: 4,
+                guidance: 2,
+                reality: 4,
+                behavioral: 4,
+                environment: 4,
+                motivation: 4,
+                inconsistency: 5,
+                responsibility: 6,
+                contribution: 4,
+                reliability: 5,
+                leadership: 3,
+                stewardship: 3,
+                application: 4
+            };
+
+
+            if (
+                Object.prototype.hasOwnProperty.call(
+                    exceptions,
+                    word
+                )
+            ) {
+
+                return exceptions[
+                    word
+                ];
+            }
+
+
+            let candidate =
+                word
+                    .replace(
+                        /(?:[^laeiouy]es|ed|[^laeiouy]e)$/i,
+                        ""
+                    )
+                    .replace(
+                        /^y/i,
+                        ""
+                    );
+
+
+            const groups =
+                candidate.match(
+                    /[aeiouy]{1,2}/g
+                );
+
+
+            let count =
+                groups
+                    ? groups.length
+                    : 1;
+
+
+            if (
+                word.endsWith(
+                    "le"
+                ) &&
+                word.length >
+                2 &&
+                !/[aeiouy]/.test(
+                    word.charAt(
+                        word.length -
+                        3
+                    )
+                )
+            ) {
+
+                count +=
+                    1;
+            }
+
+
+            return Math.max(
+                1,
+                count
+            );
+        }
+
+
+        function countSyllables(
+            text
+        ) {
+
+            return text
+                .replace(
+                    /\*\*/g,
+                    ""
+                )
+                .replace(
+                    /__/g,
+                    ""
+                )
+                .replace(
+                    /~~/g,
+                    ""
+                )
+                .replace(
+                    /\*/g,
+                    ""
+                )
+                .split(
+                    /\s+/
+                )
+                .filter(
+                    Boolean
+                )
+                .reduce(
+                    (
+                        total,
+                        word
+                    ) =>
+                        total +
+                        countWordSyllables(
+                            word
+                        ),
+                    0
+                );
+        }
+
+
+        function getPlainSlideText(
+            slide
+        ) {
+
+            if (
+                !slide
+            ) {
+
+                return "";
+            }
+
+
+            const narrative =
+                slide.querySelector(
+                    ".narrative"
+                );
+
+
+            if (
+                narrative
+            ) {
+
+                return narrative.textContent.trim();
+            }
+
+
+            const headline =
+                slide.querySelector(
+                    ".finalQrHeadline"
+                );
+
+
+            if (
+                headline
+            ) {
+
+                return headline.textContent.trim();
+            }
+
+
+            return "";
+        }
+
+
+        function getSlideTiming(
+            slide
+        ) {
+
+            if (
+                slide &&
+                slide.dataset.indefinite ===
+                "true"
+            ) {
+
+                return {
+                    syllables:
+                        countSyllables(
+                            getPlainSlideText(
+                                slide
+                            )
+                        ),
+
+                    delay:
+                        Infinity
+                };
+            }
+
+
+            const syllables =
+                countSyllables(
+                    getPlainSlideText(
+                        slide
+                    )
+                );
+
+
+            const weightedDelay =
+                CONFIG.baseDelayMs +
+                syllables *
+                CONFIG.syllableWeightMs;
+
+
+            const speedAdjusted =
+                weightedDelay /
+                Math.max(
+                    0.05,
+                    CONFIG.playbackSpeed
+                );
+
+
+            const finalDelay =
+                Math.min(
+                    CONFIG.maximumDelayMs,
+                    Math.max(
+                        CONFIG.minimumDelayMs,
+                        speedAdjusted
+                    )
+                );
+
+
+            return {
+                syllables:
+                    syllables,
+
+                delay:
+                    Math.round(
+                        finalDelay
+                    )
+            };
+        }
+
+
+        /*
+          ==========================================================
+          TEXT FITTING
+          ==========================================================
+        */
+
+
+        function fitCurrentSlide() {
+
+            const slide =
+                slides[
+                currentIndex
+                ];
+
+
+            if (
+                !slide
+            ) {
+
+                return;
+            }
+
+
+            const narrative =
+                slide.querySelector(
+                    ".narrative"
+                );
+
+
+            if (
+                narrative
+            ) {
+
+                narrative.style.fontSize =
+                    "";
+
+
+                let size =
+                    parseFloat(
+                        getComputedStyle(
+                            narrative
+                        ).fontSize
+                    );
+
+
+                let guard =
+                    0;
+
+
+                while (
+                    (
+                        narrative.scrollHeight >
+                        slide.clientHeight ||
+                        narrative.scrollWidth >
+                        slide.clientWidth
+                    ) &&
+                    size >
+                    22 &&
+                    guard <
+                    100
+                ) {
+
+                    size *=
+                        0.96;
+
+
+                    narrative.style.fontSize =
+                        size +
+                        "px";
+
+
+                    guard +=
+                        1;
+                }
+            }
+        }
+
+
+        /*
+          ==========================================================
+          PROGRESS
+          ==========================================================
+        */
+
+
+        function applyProgressCurve(
+            linear
+        ) {
+
+            const x =
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        linear
+                    )
+                );
+
+
+            const strength =
+                Math.max(
+                    0.001,
+                    CONFIG.progressCurveStrength
+                );
+
+
+            return (
+                Math.log(
+                    1 +
+                    strength *
+                    x
+                ) /
+                Math.log(
+                    1 +
+                    strength
+                )
+            );
+        }
+
+
+        function setProgress(
+            slideFraction =
+                0
+        ) {
+
+            if (
+                slides.length ===
+                0
+            ) {
+
+                retentionProgress.style.width =
+                    "0%";
+
+                return;
+            }
+
+
+            const linear =
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        (
+                            currentIndex +
+                            slideFraction
+                        ) /
+                        slides.length
+                    )
+                );
+
+
+            const curved =
+                applyProgressCurve(
+                    linear
+                );
+
+
+            retentionProgress.style.width =
+                (
+                    curved *
+                    100
+                ) +
+                "%";
+        }
+
+
+        function updateProgressFrame() {
+
+            if (
+                !isPlaying ||
+                !Number.isFinite(
+                    activeDelay
+                )
+            ) {
+
+                return;
+            }
+
+
+            const elapsed =
+                performance.now() -
+                slideStartedAt;
+
+
+            const fraction =
+                Math.min(
+                    1,
+                    elapsed /
+                    activeDelay
+                );
+
+
+            setProgress(
+                fraction
+            );
+
+
+            if (
+                fraction <
+                1
+            ) {
+
+                progressFrame =
+                    requestAnimationFrame(
+                        updateProgressFrame
+                    );
+            }
+        }
+
+
+        /*
+          ==========================================================
+          PLAYBACK
+          ==========================================================
+        */
+
+
+        function stopPlaybackTimers() {
+
+            if (
+                slideTimer !==
+                null
+            ) {
+
+                clearTimeout(
+                    slideTimer
+                );
+
+
+                slideTimer =
+                    null;
+            }
+
+
+            if (
+                progressFrame !==
+                null
+            ) {
+
+                cancelAnimationFrame(
+                    progressFrame
+                );
+
+
+                progressFrame =
+                    null;
+            }
+        }
+
+
+        function scheduleCurrentSlide() {
+
+            stopPlaybackTimers();
+
+
+            const slide =
+                slides[
+                currentIndex
+                ];
+
+
+            if (
+                !slide ||
+                !isPlaying
+            ) {
+
+                return;
+            }
+
+
+            const timingData =
+                getSlideTiming(
+                    slide
+                );
+
+
+            if (
+                timingData.delay ===
+                Infinity
+            ) {
+
+                isPlaying =
+                    false;
+
+
+                playButton.textContent =
+                    "Play";
+
+
+                timing.textContent =
+                    "Final · hold";
+
+
+                retentionProgress.style.width =
+                    "100%";
+
+
+                return;
+            }
+
+
+            activeDelay =
+                timingData.delay;
+
+
+            slideStartedAt =
+                performance.now();
+
+
+            timing.textContent =
+                timingData.syllables +
+                " syllables · " +
+                timingData.delay +
+                " ms";
+
+
+            updateProgressFrame();
+
+
+            slideTimer =
+                setTimeout(
+                    () => {
+
+                        if (
+                            currentIndex <
+                            slides.length -
+                            1
+                        ) {
+
+                            showSlide(
+                                currentIndex +
+                                1
+                            );
+
+                        } else {
+
+                            isPlaying =
+                                false;
+
+
+                            playButton.textContent =
+                                "Play";
+                        }
+                    },
+                    activeDelay
+                );
+        }
+
+
+        function showSlide(
+            index
+        ) {
+
+            stopPlaybackTimers();
+
+
+            if (
+                slides.length ===
+                0
+            ) {
+
+                counter.textContent =
+                    "00 / 00";
+
+
+                timing.textContent =
+                    "No slides";
+
+
+                return;
+            }
+
+
+            currentIndex =
+                Math.max(
+                    0,
+                    Math.min(
+                        index,
+                        slides.length -
+                        1
+                    )
+                );
+
+
+            slides.forEach(
+                (
+                    slide,
+                    slideIndex
+                ) => {
+
+                    slide.classList.toggle(
+                        "active",
+                        slideIndex ===
+                        currentIndex
+                    );
+                }
+            );
+
+
+            updateFloatingQr();
+
+
+            counter.textContent =
+                String(
+                    currentIndex +
+                    1
+                ).padStart(
+                    2,
+                    "0"
+                ) +
+                " / " +
+                String(
+                    slides.length
+                ).padStart(
+                    2,
+                    "0"
+                );
+
+
+            const currentSlide =
+                slides[
+                currentIndex
+                ];
+
+
+            const timingData =
+                getSlideTiming(
+                    currentSlide
+                );
+
+
+            if (
+                timingData.delay ===
+                Infinity
+            ) {
+
+                timing.textContent =
+                    "Final · hold";
+
+            } else {
+
+                timing.textContent =
+                    timingData.syllables +
+                    " syllables · " +
+                    timingData.delay +
+                    " ms";
+            }
+
+
+            setProgress(
+                0
+            );
+
+
+            requestAnimationFrame(
+                () => {
+
+                    fitCurrentSlide();
+                }
+            );
+
+
+            if (
+                currentSlide.dataset.indefinite ===
+                "true"
+            ) {
+
+                isPlaying =
+                    false;
+
+
+                playButton.textContent =
+                    "Play";
+
+
+                retentionProgress.style.width =
+                    "100%";
+
+
+                return;
+            }
+
+
+            if (
+                isPlaying
+            ) {
+
+                scheduleCurrentSlide();
+            }
+        }
+
+
+        function nextSlide() {
+
+            if (
+                currentIndex <
+                slides.length -
+                1
+            ) {
+
+                showSlide(
+                    currentIndex +
+                    1
+                );
+            }
+        }
+
+
+        function previousSlide() {
+
+            if (
+                currentIndex >
+                0
+            ) {
+
+                showSlide(
+                    currentIndex -
+                    1
+                );
+            }
+        }
+
+
+        function togglePlayback() {
+
+            const currentSlide =
+                slides[
+                currentIndex
+                ];
+
+
+            if (
+                currentSlide &&
+                currentSlide.dataset.indefinite ===
+                "true"
+            ) {
+
+                return;
+            }
+
+
+            isPlaying =
+                !isPlaying;
+
+
+            playButton.textContent =
+                isPlaying
+                    ? "Pause"
+                    : "Play";
+
+
+            if (
+                isPlaying
+            ) {
+
+                scheduleCurrentSlide();
+
+            } else {
+
+                stopPlaybackTimers();
+            }
+        }
+
+
+        function restartPresentation() {
+
+            isPlaying =
+                true;
+
+
+            playButton.textContent =
+                "Pause";
+
+
+            showSlide(
+                0
+            );
+        }
+
+
+        /*
+          ==========================================================
+          SOURCE EDITOR
+          ==========================================================
+        */
+
+
+        function openEditor() {
+
+            stopPlaybackTimers();
+
+
+            sourceEditorPanel.classList.add(
+                "visible"
+            );
+
+
+            sourceTextarea.focus();
+        }
+
+
+        function closeEditor() {
+
+            sourceEditorPanel.classList.remove(
+                "visible"
+            );
+
+
+            if (
+                isPlaying
+            ) {
+
+                scheduleCurrentSlide();
+            }
+        }
+
+
+        function applySourceChanges() {
+
+            sourceEditorPanel.classList.remove(
+                "visible"
+            );
+
+
+            rebuildPresentation(
+                false
+            );
+        }
+
+
+        /*
+          ==========================================================
+          CONTROLS
+          ==========================================================
+        */
+
+
+        previousButton.addEventListener(
+            "click",
+            previousSlide
+        );
+
+
+        nextButton.addEventListener(
+            "click",
+            nextSlide
+        );
+
+
+        playButton.addEventListener(
+            "click",
+            togglePlayback
+        );
+
+
+        restartButton.addEventListener(
+            "click",
+            restartPresentation
+        );
+
+
+        editSourceButton.addEventListener(
+            "click",
+            openEditor
+        );
+
+
+        closeEditorButton.addEventListener(
+            "click",
+            closeEditor
+        );
+
+
+        applySourceButton.addEventListener(
+            "click",
+            applySourceChanges
+        );
+
+
+        document.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    sourceEditorPanel.classList.contains(
+                        "visible"
+                    )
+                ) {
+
+                    if (
+                        event.key ===
+                        "Escape"
+                    ) {
+
+                        closeEditor();
+                    }
+
+
+                    return;
+                }
+
+
+                if (
+                    event.key ===
+                    "ArrowRight"
+                ) {
+
+                    nextSlide();
+                }
+
+
+                if (
+                    event.key ===
+                    "ArrowLeft"
+                ) {
+
+                    previousSlide();
+                }
+
+
+                if (
+                    event.key ===
+                    " "
+                ) {
+
+                    event.preventDefault();
+
+                    togglePlayback();
+                }
+
+
+                if (
+                    event.key.toLowerCase() ===
+                    "r"
+                ) {
+
+                    restartPresentation();
+                }
+
+
+                if (
+                    event.key.toLowerCase() ===
+                    "e"
+                ) {
+
+                    openEditor();
+                }
+            }
+        );
+
+
+        /*
+          ==========================================================
+          TOUCH / SWIPE
+          ==========================================================
+        */
+
+
+        let touchStartX =
+            0;
+
+
+        let touchStartY =
+            0;
+
+
+        document.addEventListener(
+            "touchstart",
+            event => {
+
+                if (
+                    sourceEditorPanel.classList.contains(
+                        "visible"
+                    )
+                ) {
+
+                    return;
+                }
+
+
+                const touch =
+                    event.changedTouches[
+                    0
+                    ];
+
+
+                touchStartX =
+                    touch.clientX;
+
+
+                touchStartY =
+                    touch.clientY;
+            },
+            {
+                passive:
+                    true
+            }
+        );
+
+
+        document.addEventListener(
+            "touchend",
+            event => {
+
+                if (
+                    sourceEditorPanel.classList.contains(
+                        "visible"
+                    )
+                ) {
+
+                    return;
+                }
+
+
+                const touch =
+                    event.changedTouches[
+                    0
+                    ];
+
+
+                const deltaX =
+                    touch.clientX -
+                    touchStartX;
+
+
+                const deltaY =
+                    touch.clientY -
+                    touchStartY;
+
+
+                if (
+                    Math.abs(
+                        deltaX
+                    ) <
+                    45
+                ) {
+
+                    return;
+                }
+
+
+                if (
+                    Math.abs(
+                        deltaX
+                    ) <
+                    Math.abs(
+                        deltaY
+                    )
+                ) {
+
+                    return;
+                }
+
+
+                if (
+                    deltaX <
+                    0
+                ) {
+
+                    nextSlide();
+
+                } else {
+
+                    previousSlide();
+                }
+            },
+            {
+                passive:
+                    true
+            }
+        );
+
+
+        /*
+          ==========================================================
+          RESIZE
+          ==========================================================
+        */
+
+
+        let resizeTimer =
+            null;
+
+
+        window.addEventListener(
+            "resize",
+            () => {
+
+                clearTimeout(
+                    resizeTimer
+                );
+
+
+                resizeTimer =
+                    setTimeout(
+                        () => {
+
+                            fitCurrentSlide();
+                        },
+                        100
+                    );
+            }
+        );
+
+
+        window.addEventListener(
+            "orientationchange",
+            () => {
+
+                setTimeout(
+                    () => {
+
+                        fitCurrentSlide();
+                    },
+                    220
+                );
+            }
+        );
+
+
+        /*
+          ==========================================================
+          INITIALIZE
+          ==========================================================
+        */
+
+
+        rebuildPresentation(
+            false
+        );
+
+
+        /*
+          Public hooks for future integrations.
+        */
+
+        window.presentationConfig =
+            CONFIG;
+
+
+        window.presentationSource =
+            sourceTextarea;
+
+
+        window.rebuildPresentation =
+            rebuildPresentation;
+
+
+        window.parsePresentationSource =
+            parsePresentationSource;
+
+
+        window.renderInlineFormatting =
+            renderInlineFormatting;
+
+
+        window.countSyllables =
+            countSyllables;
+
+    </script>
+
+</body>
+
+</html>
