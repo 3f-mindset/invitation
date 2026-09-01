@@ -653,6 +653,110 @@
             outline: none;
         }
 
+        #playbackSpeedControl {
+            display: grid;
+            grid-template-columns: 14px minmax(112px, 140px) 28px;
+            align-items: center;
+
+            gap: 7px;
+
+            color: #bbb6ac;
+            opacity: 0.45;
+
+            pointer-events: auto;
+
+            transition: opacity 160ms ease;
+        }
+
+        #playbackSpeedControl:hover,
+        #playbackSpeedControl:focus-within {
+            opacity: 0.85;
+        }
+
+        #playbackSpeedControl svg {
+            width: 14px;
+            height: 14px;
+
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        #playbackSpeedValue {
+            color: currentColor;
+
+            font-size: 9px;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: 0.04em;
+        }
+
+        #playbackSpeed {
+            width: 100%;
+            height: 14px;
+            margin: 0;
+
+            appearance: none;
+            -webkit-appearance: none;
+
+            background: transparent;
+            cursor: pointer;
+        }
+
+        #playbackSpeed:focus-visible {
+            outline: none;
+        }
+
+        #playbackSpeed::-webkit-slider-runnable-track {
+            height: 2px;
+
+            border-radius: 999px;
+
+            background: linear-gradient(to right,
+                    rgba(187, 182, 172, 0.72) 0%,
+                    rgba(187, 182, 172, 0.72) var(--speed-progress, 31%),
+                    rgba(187, 182, 172, 0.2) var(--speed-progress, 31%),
+                    rgba(187, 182, 172, 0.2) 100%);
+        }
+
+        #playbackSpeed::-webkit-slider-thumb {
+            width: 8px;
+            height: 8px;
+            margin-top: -3px;
+
+            appearance: none;
+            -webkit-appearance: none;
+
+            border: 1px solid currentColor;
+            border-radius: 50%;
+
+            background: #bbb6ac;
+        }
+
+        #playbackSpeed::-moz-range-track {
+            height: 2px;
+
+            border-radius: 999px;
+
+            background: linear-gradient(to right,
+                    rgba(187, 182, 172, 0.72) 0%,
+                    rgba(187, 182, 172, 0.72) var(--speed-progress, 31%),
+                    rgba(187, 182, 172, 0.2) var(--speed-progress, 31%),
+                    rgba(187, 182, 172, 0.2) 100%);
+        }
+
+        #playbackSpeed::-moz-range-thumb {
+            width: 6px;
+            height: 6px;
+
+            border: 1px solid currentColor;
+            border-radius: 50%;
+
+            background: #bbb6ac;
+        }
+
         #developerTools {
             display: none;
 
@@ -894,6 +998,20 @@
                 width: min(300px, calc(100vw - 28px));
                 padding-top: 8px;
                 gap: 6px;
+            }
+
+            #playbackSpeedControl {
+                grid-template-columns: 12px minmax(96px, 120px) 24px;
+                gap: 6px;
+            }
+
+            #playbackSpeedControl svg {
+                width: 12px;
+                height: 12px;
+            }
+
+            #playbackSpeedValue {
+                font-size: 7px;
             }
 
             #presentationSource {
@@ -1736,6 +1854,26 @@ button: Apply for the Crucible
 
             </div>
 
+            <div id="playbackSpeedControl">
+
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M4 15a8 8 0 0 1 16 0" />
+                    <path d="M12 12l4-3" />
+                </svg>
+
+                <label class="visuallyHidden" for="playbackSpeed">
+                    Playback speed
+                </label>
+
+                <input id="playbackSpeed" type="range" min="0.1" max="3" value="1" step="0.1"
+                    aria-valuetext="1× playback speed" />
+
+                <output id="playbackSpeedValue" for="playbackSpeed">
+                    1×
+                </output>
+
+            </div>
+
             <aside id="developerTools" aria-label="Development tools">
 
                 <label class="visuallyHidden" for="slideScrubber">
@@ -1911,6 +2049,18 @@ button: Apply for the Crucible
         const slideScrubber =
             document.getElementById(
                 "slideScrubber"
+            );
+
+
+        const playbackSpeed =
+            document.getElementById(
+                "playbackSpeed"
+            );
+
+
+        const playbackSpeedValue =
+            document.getElementById(
+                "playbackSpeedValue"
             );
 
 
@@ -2538,6 +2688,9 @@ button: Apply for the Crucible
             stopPlaybackTimers();
 
 
+            syncPlaybackSpeedControl();
+
+
             const previousIndex =
                 currentIndex;
 
@@ -2722,6 +2875,110 @@ button: Apply for the Crucible
                         ? "false"
                         : "true"
                 );
+        }
+
+
+        function formatPlaybackSpeed(
+            speed
+        ) {
+
+            return (
+                Number.isInteger(
+                    speed
+                )
+                    ? String(
+                        speed
+                    )
+                    : speed.toFixed(
+                        1
+                    )
+            ) +
+                "×";
+        }
+
+
+        function syncPlaybackSpeedControl() {
+
+            const minimumSpeed =
+                Number(
+                    playbackSpeed.min
+                );
+
+
+            const maximumSpeed =
+                Number(
+                    playbackSpeed.max
+                );
+
+
+            const configuredSpeed =
+                Number(
+                    CONFIG.playbackSpeed
+                );
+
+
+            const speed =
+                Math.min(
+                    maximumSpeed,
+                    Math.max(
+                        minimumSpeed,
+                        Number.isFinite(
+                            configuredSpeed
+                        )
+                            ? configuredSpeed
+                            : 1
+                    )
+                );
+
+
+            const speedProgress =
+                (
+                    (
+                        speed -
+                        minimumSpeed
+                    ) /
+                    (
+                        maximumSpeed -
+                        minimumSpeed
+                    )
+                ) *
+                100;
+
+
+            const speedLabel =
+                formatPlaybackSpeed(
+                    speed
+                );
+
+
+            CONFIG.playbackSpeed =
+                speed;
+
+
+            playbackSpeed.value =
+                String(
+                    speed
+                );
+
+
+            playbackSpeedValue.textContent =
+                speedLabel;
+
+
+            playbackSpeed.setAttribute(
+                "aria-valuetext",
+                speedLabel +
+                " playback speed"
+            );
+
+
+            playbackSpeed.style.setProperty(
+                "--speed-progress",
+                String(
+                    speedProgress
+                ) +
+                "%"
+            );
         }
 
 
@@ -3895,6 +4152,29 @@ button: Apply for the Crucible
         playButton.addEventListener(
             "click",
             togglePlayback
+        );
+
+
+        playbackSpeed.addEventListener(
+            "input",
+            () => {
+
+                CONFIG.playbackSpeed =
+                    Number(
+                        playbackSpeed.value
+                    );
+
+
+                syncPlaybackSpeedControl();
+
+
+                if (
+                    isPlaying
+                ) {
+
+                    scheduleCurrentSlide();
+                }
+            }
         );
 
 
