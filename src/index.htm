@@ -559,13 +559,13 @@
 
             left: max(14px, env(safe-area-inset-left));
             right: max(14px, env(safe-area-inset-right));
-            bottom: max(12px, env(safe-area-inset-bottom));
+            bottom: max(44px, env(safe-area-inset-bottom));
 
             display: flex;
             flex-direction: column;
             align-items: center;
 
-            gap: 7px;
+            gap: 10px;
 
             pointer-events: none;
         }
@@ -575,9 +575,9 @@
             justify-content: center;
             flex-wrap: wrap;
 
-            gap: 7px;
+            gap: 8px;
 
-            opacity: 0.35;
+            opacity: 0.6;
 
             pointer-events: auto;
 
@@ -587,6 +587,40 @@
         #controls:hover,
         #controls:focus-within {
             opacity: 1;
+        }
+
+        #controls .controlButton {
+            display: grid;
+            place-items: center;
+
+            width: 38px;
+            min-width: 38px;
+            height: 38px;
+            min-height: 38px;
+            padding: 0;
+
+            border-radius: 50%;
+        }
+
+        .controlButton svg {
+            width: 17px;
+            height: 17px;
+
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .controlButton .controlIcon--filled {
+            fill: currentColor;
+            stroke: none;
+        }
+
+        #playButton[data-state="playing"] .controlIcon--play,
+        #playButton[data-state="paused"] .controlIcon--pause {
+            display: none;
         }
 
         button {
@@ -617,6 +651,106 @@
             color: #ffffff;
             border-color: #66615a;
             outline: none;
+        }
+
+        #developerTools {
+            display: none;
+
+            width: min(360px, calc(100vw - 28px));
+            padding-top: 10px;
+
+            border-top: 1px solid rgba(255, 255, 255, 0.09);
+
+            gap: 8px;
+
+            pointer-events: auto;
+        }
+
+        #app.is-development #developerTools {
+            display: grid;
+        }
+
+        .visuallyHidden {
+            position: absolute;
+
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+
+            white-space: nowrap;
+            border: 0;
+        }
+
+        #slideScrubber {
+            width: 100%;
+            height: 16px;
+            margin: 0;
+
+            appearance: none;
+            -webkit-appearance: none;
+
+            background: transparent;
+            cursor: pointer;
+        }
+
+        #slideScrubber:focus-visible {
+            outline: none;
+        }
+
+        #slideScrubber::-webkit-slider-runnable-track {
+            height: 2px;
+
+            border-radius: 999px;
+
+            background: linear-gradient(
+                to right,
+                #b9b3a9 0%,
+                #b9b3a9 var(--slide-progress, 0%),
+                #4a4742 var(--slide-progress, 0%),
+                #4a4742 100%
+            );
+        }
+
+        #slideScrubber::-webkit-slider-thumb {
+            width: 12px;
+            height: 12px;
+            margin-top: -5px;
+
+            appearance: none;
+            -webkit-appearance: none;
+
+            border: 1px solid #b9b3a9;
+            border-radius: 50%;
+
+            background: var(--text);
+        }
+
+        #slideScrubber::-moz-range-track {
+            height: 2px;
+
+            border-radius: 999px;
+
+            background: linear-gradient(
+                to right,
+                #b9b3a9 0%,
+                #b9b3a9 var(--slide-progress, 0%),
+                #4a4742 var(--slide-progress, 0%),
+                #4a4742 100%
+            );
+        }
+
+        #slideScrubber::-moz-range-thumb {
+            width: 10px;
+            height: 10px;
+
+            border: 1px solid #b9b3a9;
+            border-radius: 50%;
+
+            background: var(--text);
         }
 
         #debugInfo {
@@ -729,11 +863,23 @@
             }
 
             #bottomChrome {
-                bottom: max(8px, env(safe-area-inset-bottom));
+                bottom: max(28px, env(safe-area-inset-bottom));
             }
 
             #controls {
                 gap: 4px;
+            }
+
+            #controls .controlButton {
+                width: 32px;
+                min-width: 32px;
+                height: 32px;
+                min-height: 32px;
+            }
+
+            .controlButton svg {
+                width: 15px;
+                height: 15px;
             }
 
             button {
@@ -746,6 +892,12 @@
 
             #debugInfo {
                 font-size: 7px;
+            }
+
+            #developerTools {
+                width: min(300px, calc(100vw - 28px));
+                padding-top: 8px;
+                gap: 6px;
             }
 
             #presentationSource {
@@ -1583,41 +1735,53 @@ button: Apply for the Crucible
 
             <div id="controls">
 
-                <button id="previousButton" type="button">
-                    Previous
+                <button id="previousButton" class="controlButton" type="button" aria-label="Previous slide"
+                    title="Previous slide">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M15 18l-6-6 6-6" />
+                    </svg>
                 </button>
 
-                <button id="playButton" type="button">
-                    Pause
+                <button id="playButton" class="controlButton" type="button" data-state="playing"
+                    aria-label="Pause presentation" title="Pause presentation">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <path class="controlIcon--filled controlIcon--play" d="M8 5v14l11-7z" />
+                        <path class="controlIcon--pause" d="M9 6v12M15 6v12" />
+                    </svg>
                 </button>
 
-                <button id="nextButton" type="button">
-                    Next
-                </button>
-
-                <button id="restartButton" type="button">
-                    Restart
-                </button>
-
-                <button id="editSourceButton" type="button">
-                    Edit Text
+                <button id="nextButton" class="controlButton" type="button" aria-label="Next slide" title="Next slide">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M9 6l6 6-6 6" />
+                    </svg>
                 </button>
 
             </div>
 
-            <div id="debugInfo">
+            <aside id="developerTools" aria-label="Development tools">
 
-                <span id="counter">
-                    01 / 01
-                </span>
+                <label class="visuallyHidden" for="slideScrubber">
+                    Go to slide
+                </label>
 
-                <span id="debugDivider"></span>
+                <input id="slideScrubber" type="range" min="1" max="1" value="1" step="1"
+                    aria-valuetext="Slide 1 of 1" />
 
-                <span id="timing">
-                    0 syllables · 0 ms
-                </span>
+                <div id="debugInfo">
 
-            </div>
+                    <span id="counter">
+                        01 / 01
+                    </span>
+
+                    <span id="debugDivider"></span>
+
+                    <span id="timing">
+                        0 syllables · 0 ms
+                    </span>
+
+                </div>
+
+            </aside>
 
         </div>
 
@@ -1659,6 +1823,29 @@ button: Apply for the Crucible
         };
 
 
+        const app =
+            document.getElementById(
+                "app"
+            );
+
+
+        const isLocalDevelopment =
+            [
+                "localhost",
+                "127.0.0.1",
+                "::1",
+                "0.0.0.0"
+            ].includes(
+                window.location.hostname
+            );
+
+
+        app.classList.toggle(
+            "is-development",
+            isLocalDevelopment
+        );
+
+
         const stage =
             document.getElementById(
                 "stage"
@@ -1686,12 +1873,6 @@ button: Apply for the Crucible
         const closeEditorButton =
             document.getElementById(
                 "closeEditorButton"
-            );
-
-
-        const editSourceButton =
-            document.getElementById(
-                "editSourceButton"
             );
 
 
@@ -1737,12 +1918,6 @@ button: Apply for the Crucible
             );
 
 
-        const restartButton =
-            document.getElementById(
-                "restartButton"
-            );
-
-
         const counter =
             document.getElementById(
                 "counter"
@@ -1752,6 +1927,12 @@ button: Apply for the Crucible
         const timing =
             document.getElementById(
                 "timing"
+            );
+
+
+        const slideScrubber =
+            document.getElementById(
+                "slideScrubber"
             );
 
 
@@ -2453,16 +2634,15 @@ button: Apply for the Crucible
             } else {
 
                 currentIndex =
-                    0;
+                    getSlideIndexFromLocation();
             }
 
 
             isPlaying =
-                true;
+                !isPresentationPausedInLocation();
 
 
-            playButton.textContent =
-                "Pause";
+            setPlaybackButtonState();
 
 
             showSlide(
@@ -2942,6 +3122,193 @@ button: Apply for the Crucible
 
         /*
           ==========================================================
+          SLIDE LOCATION
+          ==========================================================
+        */
+
+
+        function getSlideIndexFromLocation() {
+
+            const locationParams =
+                new URLSearchParams(
+                    window.location.hash.slice(
+                        1
+                    )
+                );
+
+
+            const requestedSlide =
+                Number(
+                    locationParams.get(
+                        "slide"
+                    )
+                );
+
+
+            if (
+                !Number.isInteger(
+                    requestedSlide
+                ) ||
+                requestedSlide <
+                1
+            ) {
+
+                return 0;
+            }
+
+
+            return requestedSlide -
+                1;
+        }
+
+
+        function isPresentationPausedInLocation() {
+
+            const locationParams =
+                new URLSearchParams(
+                    window.location.hash.slice(
+                        1
+                    )
+                );
+
+
+            return locationParams.get(
+                "paused"
+            ) ===
+                "1";
+        }
+
+
+        function updateSlideLocation() {
+
+            const url =
+                new URL(
+                    window.location.href
+                );
+
+
+            const locationParams =
+                new URLSearchParams(
+                    url.hash.slice(
+                        1
+                    )
+                );
+
+
+            locationParams.set(
+                "slide",
+                String(
+                    currentIndex +
+                    1
+                )
+            );
+
+
+            if (
+                isPlaying
+            ) {
+
+                locationParams.delete(
+                    "paused"
+                );
+
+            } else {
+
+                locationParams.set(
+                    "paused",
+                    "1"
+                );
+            }
+
+
+            url.hash =
+                locationParams.toString();
+
+
+            window.history.replaceState(
+                window.history.state,
+                "",
+                url
+            );
+        }
+
+
+        function syncSlideScrubber() {
+
+            const totalSlides =
+                Math.max(
+                    1,
+                    slides.length
+                );
+
+
+            const currentSlide =
+                Math.min(
+                    totalSlides,
+                    currentIndex +
+                    1
+                );
+
+
+            slideScrubber.max =
+                String(
+                    totalSlides
+                );
+
+
+            slideScrubber.value =
+                String(
+                    currentSlide
+                );
+
+
+            slideScrubber.disabled =
+                slides.length ===
+                0;
+
+
+            slideScrubber.setAttribute(
+                "aria-valuetext",
+                "Slide " +
+                String(
+                    currentSlide
+                ) +
+                " of " +
+                String(
+                    totalSlides
+                )
+            );
+
+
+            const progress =
+                totalSlides ===
+                1
+                    ? 0
+                    : (
+                        (
+                            currentSlide -
+                            1
+                        ) /
+                        (
+                            totalSlides -
+                            1
+                        )
+                    ) *
+                    100;
+
+
+            slideScrubber.style.setProperty(
+                "--slide-progress",
+                String(
+                    progress
+                ) +
+                "%"
+            );
+        }
+
+
+        /*
+          ==========================================================
           PROGRESS
           ==========================================================
         */
@@ -3079,6 +3446,35 @@ button: Apply for the Crucible
         */
 
 
+        function setPlaybackButtonState() {
+
+            const isPaused =
+                !isPlaying;
+
+
+            const label =
+                isPaused
+                    ? "Play presentation"
+                    : "Pause presentation";
+
+
+            playButton.dataset.state =
+                isPaused
+                    ? "paused"
+                    : "playing";
+
+
+            playButton.setAttribute(
+                "aria-label",
+                label
+            );
+
+
+            playButton.title =
+                label;
+        }
+
+
         function stopPlaybackTimers() {
 
             if (
@@ -3108,6 +3504,28 @@ button: Apply for the Crucible
 
                 progressFrame =
                     null;
+            }
+        }
+
+
+        function pausePlayback() {
+
+            isPlaying =
+                false;
+
+
+            setPlaybackButtonState();
+
+
+            stopPlaybackTimers();
+
+
+            if (
+                slides.length >
+                0
+            ) {
+
+                updateSlideLocation();
             }
         }
 
@@ -3147,8 +3565,7 @@ button: Apply for the Crucible
                     false;
 
 
-                playButton.textContent =
-                    "Play";
+                setPlaybackButtonState();
 
 
                 timing.textContent =
@@ -3157,6 +3574,9 @@ button: Apply for the Crucible
 
                 retentionProgress.style.width =
                     "100%";
+
+
+                updateSlideLocation();
 
 
                 return;
@@ -3202,8 +3622,10 @@ button: Apply for the Crucible
                                 false;
 
 
-                            playButton.textContent =
-                                "Play";
+                            setPlaybackButtonState();
+
+
+                            updateSlideLocation();
                         }
                     },
                     activeDelay
@@ -3231,6 +3653,9 @@ button: Apply for the Crucible
                     "No slides";
 
 
+                syncSlideScrubber();
+
+
                 return;
             }
 
@@ -3244,6 +3669,9 @@ button: Apply for the Crucible
                         1
                     )
                 );
+
+
+            syncSlideScrubber();
 
 
             slides.forEach(
@@ -3333,16 +3761,21 @@ button: Apply for the Crucible
                     false;
 
 
-                playButton.textContent =
-                    "Play";
+                setPlaybackButtonState();
 
 
                 retentionProgress.style.width =
                     "100%";
 
 
+                updateSlideLocation();
+
+
                 return;
             }
+
+
+            updateSlideLocation();
 
 
             if (
@@ -3407,10 +3840,10 @@ button: Apply for the Crucible
                 !isPlaying;
 
 
-            playButton.textContent =
-                isPlaying
-                    ? "Pause"
-                    : "Play";
+            setPlaybackButtonState();
+
+
+            updateSlideLocation();
 
 
             if (
@@ -3426,41 +3859,11 @@ button: Apply for the Crucible
         }
 
 
-        function restartPresentation() {
-
-            isPlaying =
-                true;
-
-
-            playButton.textContent =
-                "Pause";
-
-
-            showSlide(
-                0
-            );
-        }
-
-
         /*
           ==========================================================
           SOURCE EDITOR
           ==========================================================
         */
-
-
-        function openEditor() {
-
-            stopPlaybackTimers();
-
-
-            sourceEditorPanel.classList.add(
-                "visible"
-            );
-
-
-            sourceTextarea.focus();
-        }
 
 
         function closeEditor() {
@@ -3517,15 +3920,20 @@ button: Apply for the Crucible
         );
 
 
-        restartButton.addEventListener(
-            "click",
-            restartPresentation
-        );
+        slideScrubber.addEventListener(
+            "input",
+            () => {
+
+                pausePlayback();
 
 
-        editSourceButton.addEventListener(
-            "click",
-            openEditor
+                showSlide(
+                    Number(
+                        slideScrubber.value
+                    ) -
+                    1
+                );
+            }
         );
 
 
@@ -3565,6 +3973,19 @@ button: Apply for the Crucible
 
 
                 if (
+                    event.target instanceof
+                    HTMLInputElement ||
+                    event.target instanceof
+                    HTMLTextAreaElement ||
+                    event.target instanceof
+                    HTMLButtonElement
+                ) {
+
+                    return;
+                }
+
+
+                if (
                     event.key ===
                     "ArrowRight"
                 ) {
@@ -3591,23 +4012,58 @@ button: Apply for the Crucible
 
                     togglePlayback();
                 }
+            }
+        );
 
+
+        function restoreSlideFromLocation() {
+
+            const requestedIndex =
+                getSlideIndexFromLocation();
+
+
+            if (
+                requestedIndex ===
+                currentIndex
+            ) {
+
+                updateSlideLocation();
+
+
+                return;
+            }
+
+
+            pausePlayback();
+
+
+            showSlide(
+                requestedIndex
+            );
+        }
+
+
+        window.addEventListener(
+            "hashchange",
+            restoreSlideFromLocation
+        );
+
+
+        window.addEventListener(
+            "popstate",
+            restoreSlideFromLocation
+        );
+
+
+        document.addEventListener(
+            "visibilitychange",
+            () => {
 
                 if (
-                    event.key.toLowerCase() ===
-                    "r"
+                    document.hidden
                 ) {
 
-                    restartPresentation();
-                }
-
-
-                if (
-                    event.key.toLowerCase() ===
-                    "e"
-                ) {
-
-                    openEditor();
+                    pausePlayback();
                 }
             }
         );
