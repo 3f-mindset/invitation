@@ -1,0 +1,12 @@
+{
+  "name": "3f-mindset-invitation",
+  "private": true,
+  "scripts": {
+    "serve": "node serve.js",
+    "render:video": "node render-video.mjs",
+    "install:renderer": "playwright install chromium"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.1"
+  }
+}

@@ -4535,6 +4535,16 @@ button: Apply for the Crucible
         window.countSyllables =
             countSyllables;
 
+
+        window.getPresentationSlideTimings =
+            () =>
+                slides.map(
+                    slide =>
+                        getSlideTiming(
+                            slide
+                        )
+                );
+
     </script>
 
 </body>
