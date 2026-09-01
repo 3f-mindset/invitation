@@ -1905,7 +1905,97 @@ button: Apply for the Crucible
 
 
     <script>
+        const localDevelopmentHosts =
+            [
+                "localhost",
+                "127.0.0.1",
+                "::1",
+                "0.0.0.0"
+            ];
+
+
+        const isLocalDevelopment =
+            localDevelopmentHosts.includes(
+                window.location.hostname
+            );
+
+
         const CONFIG = {
+            presentation: {
+                id:
+                    "3f_agency_webinar",
+
+                version:
+                    "2026_08_31",
+
+                funnel:
+                    "crucible_application",
+
+                language:
+                    "en"
+            },
+
+            analytics: {
+                /*
+                  Configure GTM here after consent management is
+                  in place. Telemetry never includes textarea text,
+                  contact details, or other PII.
+                */
+                enabled:
+                    !isLocalDevelopment,
+
+                gtmContainerId:
+                    "",
+
+                debugMode:
+                    false,
+
+                heartbeatMs:
+                    5000,
+
+                dedupeWindowMs:
+                    250,
+
+                maxLocalEventLog:
+                    500
+            },
+
+            consent: {
+                defaultState: {
+                    analytics_storage:
+                        "denied",
+
+                    ad_storage:
+                        "denied",
+
+                    ad_user_data:
+                        "denied",
+
+                    ad_personalization:
+                        "denied",
+
+                    functionality_storage:
+                        "granted",
+
+                    security_storage:
+                        "granted"
+                }
+            },
+
+            experiments: {
+                id:
+                    "control",
+
+                variant:
+                    "control",
+
+                progressVariant:
+                    "log_curve_15",
+
+                timingVariant:
+                    "baseline_2000"
+            },
+
             /*
               Replace with the real application URL.
             */
@@ -1942,17 +2032,6 @@ button: Apply for the Crucible
         const app =
             document.getElementById(
                 "app"
-            );
-
-
-        const isLocalDevelopment =
-            [
-                "localhost",
-                "127.0.0.1",
-                "::1",
-                "0.0.0.0"
-            ].includes(
-                window.location.hostname
             );
 
 
@@ -2090,6 +2169,707 @@ button: Apply for the Crucible
 
         let slideStartedAt =
             0;
+
+
+        let telemetryConsent =
+        {
+            ...CONFIG.consent.defaultState
+        };
+
+
+        const telemetrySessionId =
+            createAnonymousId();
+
+
+        const telemetryEventTimes =
+            new Map();
+
+
+        const localTelemetryEvents =
+            [];
+
+
+        const seenCtaImpressions =
+            new Set();
+
+
+        let activeSlideIndex =
+            -1;
+
+
+        let activeSlideVisibleMs =
+            0;
+
+
+        let activeSlideClockStartedAt =
+            document.visibilityState ===
+                "visible"
+                ? performance.now()
+                : 0;
+
+
+        let heartbeatTimer =
+            null;
+
+
+        let gtmLoaded =
+            false;
+
+
+        function createAnonymousId() {
+
+            if (
+                window.crypto &&
+                typeof window.crypto.randomUUID ===
+                "function"
+            ) {
+
+                return window.crypto.randomUUID();
+            }
+
+
+            return (
+                Math.random().toString(
+                    36
+                ).slice(
+                    2
+                ) +
+                "-" +
+                Date.now().toString(
+                    36
+                )
+            );
+        }
+
+
+        function getGtag() {
+
+            window.dataLayer =
+                window.dataLayer ||
+                [];
+
+
+            window.gtag =
+                window.gtag ||
+                function () {
+
+                    window.dataLayer.push(
+                        arguments
+                    );
+                };
+
+
+            return window.gtag;
+        }
+
+
+        function configureDefaultConsent() {
+
+            getGtag()(
+                "consent",
+                "default",
+                {
+                    ...telemetryConsent,
+                    wait_for_update:
+                        500
+                }
+            );
+        }
+
+
+        function isAnalyticsPermitted() {
+
+            return (
+                CONFIG.analytics.enabled &&
+                telemetryConsent.analytics_storage ===
+                "granted"
+            );
+        }
+
+
+        function loadGoogleTagManager() {
+
+            const containerId =
+                CONFIG.analytics.gtmContainerId;
+
+
+            if (
+                gtmLoaded ||
+                !CONFIG.analytics.enabled ||
+                !/^GTM-[A-Z0-9]+$/.test(
+                    containerId
+                )
+            ) {
+
+                return;
+            }
+
+
+            window.dataLayer.push(
+                {
+                    "gtm.start":
+                        Date.now(),
+
+                    event:
+                        "gtm.js"
+                }
+            );
+
+
+            const script =
+                document.createElement(
+                    "script"
+                );
+
+
+            script.async =
+                true;
+
+
+            script.src =
+                "https://www.googletagmanager.com/gtm.js?id=" +
+                encodeURIComponent(
+                    containerId
+                );
+
+
+            document.head.appendChild(
+                script
+            );
+
+
+            gtmLoaded =
+                true;
+        }
+
+
+        function getTelemetrySlideContext(
+            slideIndex =
+                currentIndex
+        ) {
+
+            const slide =
+                slides[
+                slideIndex
+                ];
+
+
+            return {
+                slide_index:
+                    slide
+                        ? slideIndex +
+                        1
+                        : null,
+
+                slide_total:
+                    slides.length,
+
+                slide_type:
+                    slide
+                        ? slide.dataset.type ||
+                        "text"
+                        : null,
+
+                slide_is_indefinite:
+                    slide
+                        ? slide.dataset.indefinite ===
+                        "true"
+                        : false
+            };
+        }
+
+
+        function getTelemetryProgressContext() {
+
+            return {
+                is_playing:
+                    isPlaying,
+
+                progress_percent:
+                    slides.length >
+                        0
+                        ? Math.round(
+                            (
+                                (
+                                    currentIndex +
+                                    1
+                                ) /
+                                slides.length
+                            ) *
+                            100
+                        )
+                        : 0
+            };
+        }
+
+
+        function createTelemetryEnvelope(
+            eventName,
+            payload =
+                {}
+        ) {
+
+            return {
+                event:
+                    eventName,
+
+                event_id:
+                    createAnonymousId(),
+
+                event_timestamp_ms:
+                    Date.now(),
+
+                presentation_id:
+                    CONFIG.presentation.id,
+
+                presentation_version:
+                    CONFIG.presentation.version,
+
+                presentation_language:
+                    CONFIG.presentation.language,
+
+                funnel:
+                    CONFIG.presentation.funnel,
+
+                telemetry_session_id:
+                    telemetrySessionId,
+
+                experiment_id:
+                    CONFIG.experiments.id,
+
+                experiment_variant:
+                    CONFIG.experiments.variant,
+
+                progress_variant:
+                    CONFIG.experiments.progressVariant,
+
+                timing_variant:
+                    CONFIG.experiments.timingVariant,
+
+                viewport_width:
+                    window.innerWidth,
+
+                viewport_height:
+                    window.innerHeight,
+
+                viewport_orientation:
+                    window.innerWidth >=
+                        window.innerHeight
+                        ? "landscape"
+                        : "portrait",
+
+                visibility_state:
+                    document.visibilityState,
+
+                ...getTelemetrySlideContext(),
+                ...getTelemetryProgressContext(),
+                ...payload
+            };
+        }
+
+
+        function shouldSuppressTelemetryDuplicate(
+            eventName,
+            payload
+        ) {
+
+            const fingerprint =
+                [
+                    eventName,
+                    payload.slide_index ||
+                    "",
+                    payload.navigation_method ||
+                    "",
+                    payload.cta_placement ||
+                    ""
+                ].join(
+                    "|"
+                );
+
+
+            const now =
+                performance.now();
+
+
+            const previousTime =
+                telemetryEventTimes.get(
+                    fingerprint
+                );
+
+
+            telemetryEventTimes.set(
+                fingerprint,
+                now
+            );
+
+
+            return (
+                previousTime !==
+                undefined &&
+                now -
+                previousTime <
+                CONFIG.analytics.dedupeWindowMs
+            );
+        }
+
+
+        function trackTelemetry(
+            eventName,
+            payload =
+                {}
+        ) {
+
+            if (
+                !isAnalyticsPermitted()
+            ) {
+
+                return;
+            }
+
+
+            const eventPayload =
+                createTelemetryEnvelope(
+                    eventName,
+                    payload
+                );
+
+
+            if (
+                shouldSuppressTelemetryDuplicate(
+                    eventName,
+                    eventPayload
+                )
+            ) {
+
+                return;
+            }
+
+
+            localTelemetryEvents.push(
+                eventPayload
+            );
+
+
+            if (
+                localTelemetryEvents.length >
+                CONFIG.analytics.maxLocalEventLog
+            ) {
+
+                localTelemetryEvents.shift();
+            }
+
+
+            window.dataLayer.push(
+                eventPayload
+            );
+
+
+            if (
+                CONFIG.analytics.debugMode
+            ) {
+
+                console.debug(
+                    "[PresentationTelemetry]",
+                    eventName,
+                    eventPayload
+                );
+            }
+        }
+
+
+        function updateTelemetryConsent(
+            values =
+                {}
+        ) {
+
+            const consentKeys =
+                [
+                    "analytics_storage",
+                    "ad_storage",
+                    "ad_user_data",
+                    "ad_personalization",
+                    "functionality_storage",
+                    "security_storage"
+                ];
+
+
+            const update =
+                Object.fromEntries(
+                    consentKeys
+                        .filter(
+                            key =>
+                                values[key] ===
+                                "granted" ||
+                                values[key] ===
+                                "denied"
+                        )
+                        .map(
+                            key =>
+                                [
+                                    key,
+                                    values[key]
+                                ]
+                        )
+                );
+
+
+            if (
+                Object.keys(
+                    update
+                ).length ===
+                0
+            ) {
+
+                return;
+            }
+
+
+            const analyticsWasPermitted =
+                isAnalyticsPermitted();
+
+
+            telemetryConsent =
+            {
+                ...telemetryConsent,
+                ...update
+            };
+
+
+            getGtag()(
+                "consent",
+                "update",
+                update
+            );
+
+
+            if (
+                !isAnalyticsPermitted()
+            ) {
+
+                return;
+            }
+
+
+            loadGoogleTagManager();
+
+
+            trackTelemetry(
+                "presentation_consent_updated",
+                {
+                    analytics_storage:
+                        telemetryConsent.analytics_storage,
+
+                    consent_granted_during_session:
+                        !analyticsWasPermitted
+                }
+            );
+
+
+            if (
+                !analyticsWasPermitted
+            ) {
+
+                trackTelemetry(
+                    "presentation_start",
+                    {
+                        consent_granted_during_session:
+                            true
+                    }
+                );
+            }
+        }
+
+
+        function flushActiveSlideClock() {
+
+            if (
+                !activeSlideClockStartedAt
+            ) {
+
+                return;
+            }
+
+
+            activeSlideVisibleMs +=
+                Math.max(
+                    0,
+                    performance.now() -
+                    activeSlideClockStartedAt
+                );
+
+
+            activeSlideClockStartedAt =
+                0;
+        }
+
+
+        function beginActiveSlideClock(
+            slideIndex
+        ) {
+
+            activeSlideIndex =
+                slideIndex;
+
+
+            activeSlideVisibleMs =
+                0;
+
+
+            activeSlideClockStartedAt =
+                document.visibilityState ===
+                    "visible"
+                    ? performance.now()
+                    : 0;
+        }
+
+
+        function trackSlideExit(
+            slideIndex,
+            exitReason
+        ) {
+
+            if (
+                activeSlideIndex !==
+                slideIndex
+            ) {
+
+                return;
+            }
+
+
+            flushActiveSlideClock();
+
+
+            trackTelemetry(
+                "presentation_slide_exit",
+                {
+                    ...getTelemetrySlideContext(
+                        slideIndex
+                    ),
+
+                    exit_reason:
+                        exitReason,
+
+                    slide_active_ms:
+                        Math.round(
+                            activeSlideVisibleMs
+                        )
+                }
+            );
+        }
+
+
+        function trackSlideView(
+            navigationMethod,
+            timingData
+        ) {
+
+            beginActiveSlideClock(
+                currentIndex
+            );
+
+
+            trackTelemetry(
+                "presentation_slide_view",
+                {
+                    navigation_method:
+                        navigationMethod,
+
+                    slide_expected_delay_ms:
+                        Number.isFinite(
+                            timingData.delay
+                        )
+                            ? timingData.delay
+                            : null
+                }
+            );
+        }
+
+
+        function trackCtaImpression(
+            placement,
+            channel
+        ) {
+
+            const key =
+                [
+                    currentIndex,
+                    placement,
+                    channel
+                ].join(
+                    "|"
+                );
+
+
+            if (
+                seenCtaImpressions.has(
+                    key
+                )
+            ) {
+
+                return;
+            }
+
+
+            seenCtaImpressions.add(
+                key
+            );
+
+
+            trackTelemetry(
+                channel ===
+                    "qr"
+                    ? "qr_impression"
+                    : "cta_impression",
+                {
+                    cta_placement:
+                        placement,
+
+                    cta_channel:
+                        channel
+                }
+            );
+        }
+
+
+        function startTelemetryHeartbeat() {
+
+            clearInterval(
+                heartbeatTimer
+            );
+
+
+            heartbeatTimer =
+                setInterval(
+                    () => {
+
+                        if (
+                            document.visibilityState ===
+                            "visible" &&
+                            activeSlideIndex >=
+                            0
+                        ) {
+
+                            trackTelemetry(
+                                "presentation_heartbeat",
+                                {
+                                    heartbeat_interval_ms:
+                                        CONFIG.analytics.heartbeatMs
+                                }
+                            );
+                        }
+                    },
+                    CONFIG.analytics.heartbeatMs
+                );
+        }
+
+
+        function initializeTelemetry() {
+
+            configureDefaultConsent();
+
+            startTelemetryHeartbeat();
+        }
 
 
         /*
@@ -2688,6 +3468,12 @@ button: Apply for the Crucible
             stopPlaybackTimers();
 
 
+            trackSlideExit(
+                currentIndex,
+                "presentation_rebuilt"
+            );
+
+
             syncPlaybackSpeedControl();
 
 
@@ -2777,7 +3563,8 @@ button: Apply for the Crucible
 
 
             showSlide(
-                currentIndex
+                currentIndex,
+                "initial"
             );
         }
 
@@ -2875,6 +3662,23 @@ button: Apply for the Crucible
                         ? "false"
                         : "true"
                 );
+
+
+            if (
+                shouldShow
+            ) {
+
+                trackCtaImpression(
+                    "floating_application",
+                    "button"
+                );
+
+
+                trackCtaImpression(
+                    "floating_application",
+                    "qr"
+                );
+            }
         }
 
 
@@ -3743,7 +4547,13 @@ button: Apply for the Crucible
         }
 
 
-        function pausePlayback() {
+        function pausePlayback(
+            pauseMethod =
+                "system"
+        ) {
+
+            const wasPlaying =
+                isPlaying;
 
             isPlaying =
                 false;
@@ -3753,6 +4563,20 @@ button: Apply for the Crucible
 
 
             stopPlaybackTimers();
+
+
+            if (
+                wasPlaying
+            ) {
+
+                trackTelemetry(
+                    "presentation_pause",
+                    {
+                        pause_method:
+                            pauseMethod
+                    }
+                );
+            }
 
 
             if (
@@ -3848,7 +4672,8 @@ button: Apply for the Crucible
 
                             showSlide(
                                 currentIndex +
-                                1
+                                1,
+                                "automatic"
                             );
 
                         } else {
@@ -3860,6 +4685,15 @@ button: Apply for the Crucible
                             setPlaybackButtonState();
 
 
+                            trackTelemetry(
+                                "presentation_complete",
+                                {
+                                    completion_method:
+                                        "natural"
+                                }
+                            );
+
+
                             updateSlideLocation();
                         }
                     },
@@ -3869,7 +4703,9 @@ button: Apply for the Crucible
 
 
         function showSlide(
-            index
+            index,
+            navigationMethod =
+                "automatic"
         ) {
 
             stopPlaybackTimers();
@@ -3895,6 +4731,10 @@ button: Apply for the Crucible
             }
 
 
+            const previousIndex =
+                currentIndex;
+
+
             currentIndex =
                 Math.max(
                     0,
@@ -3904,6 +4744,18 @@ button: Apply for the Crucible
                         1
                     )
                 );
+
+
+            if (
+                previousIndex !==
+                currentIndex
+            ) {
+
+                trackSlideExit(
+                    previousIndex,
+                    navigationMethod
+                );
+            }
 
 
             syncSlideScrubber();
@@ -3974,6 +4826,30 @@ button: Apply for the Crucible
             }
 
 
+            trackSlideView(
+                navigationMethod,
+                timingData
+            );
+
+
+            if (
+                currentSlide.dataset.type ===
+                "finalQr"
+            ) {
+
+                trackCtaImpression(
+                    "final_application",
+                    "button"
+                );
+
+
+                trackCtaImpression(
+                    "final_application",
+                    "qr"
+                );
+            }
+
+
             setProgress(
                 0
             );
@@ -3991,6 +4867,21 @@ button: Apply for the Crucible
                 currentSlide.dataset.indefinite ===
                 "true"
             ) {
+
+                if (
+                    navigationMethod ===
+                    "automatic"
+                ) {
+
+                    trackTelemetry(
+                        "presentation_complete",
+                        {
+                            completion_method:
+                                "final_slide"
+                        }
+                    );
+                }
+
 
                 isPlaying =
                     false;
@@ -4030,9 +4921,19 @@ button: Apply for the Crucible
                 1
             ) {
 
+                trackTelemetry(
+                    "presentation_next",
+                    {
+                        navigation_method:
+                            "manual_next"
+                    }
+                );
+
+
                 showSlide(
                     currentIndex +
-                    1
+                    1,
+                    "manual_next"
                 );
             }
         }
@@ -4045,9 +4946,19 @@ button: Apply for the Crucible
                 0
             ) {
 
+                trackTelemetry(
+                    "presentation_previous",
+                    {
+                        navigation_method:
+                            "manual_previous"
+                    }
+                );
+
+
                 showSlide(
                     currentIndex -
-                    1
+                    1,
+                    "manual_previous"
                 );
             }
         }
@@ -4085,11 +4996,29 @@ button: Apply for the Crucible
                 isPlaying
             ) {
 
+                trackTelemetry(
+                    "presentation_resume",
+                    {
+                        resume_method:
+                            "control"
+                    }
+                );
+
+
                 scheduleCurrentSlide();
 
             } else {
 
                 stopPlaybackTimers();
+
+
+                trackTelemetry(
+                    "presentation_pause",
+                    {
+                        pause_method:
+                            "control"
+                    }
+                );
             }
         }
 
@@ -4159,6 +5088,10 @@ button: Apply for the Crucible
             "input",
             () => {
 
+                const previousSpeed =
+                    CONFIG.playbackSpeed;
+
+
                 CONFIG.playbackSpeed =
                     Number(
                         playbackSpeed.value
@@ -4166,6 +5099,18 @@ button: Apply for the Crucible
 
 
                 syncPlaybackSpeedControl();
+
+
+                trackTelemetry(
+                    "presentation_speed_changed",
+                    {
+                        playback_speed:
+                            CONFIG.playbackSpeed,
+
+                        previous_playback_speed:
+                            previousSpeed
+                    }
+                );
 
 
                 if (
@@ -4182,14 +5127,26 @@ button: Apply for the Crucible
             "input",
             () => {
 
-                pausePlayback();
+                pausePlayback(
+                    "scrubber"
+                );
+
+
+                trackTelemetry(
+                    "presentation_scrub",
+                    {
+                        navigation_method:
+                            "manual_scrub"
+                    }
+                );
 
 
                 showSlide(
                     Number(
                         slideScrubber.value
                     ) -
-                    1
+                    1,
+                    "manual_scrub"
                 );
             }
         );
@@ -4204,6 +5161,50 @@ button: Apply for the Crucible
         applySourceButton.addEventListener(
             "click",
             applySourceChanges
+        );
+
+
+        document.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    !(event.target instanceof
+                        Element)
+                ) {
+
+                    return;
+                }
+
+
+                const cta =
+                    event.target.closest(
+                        "#floatingApplicationButton, .finalQrButton"
+                    );
+
+
+                if (
+                    !cta
+                ) {
+
+                    return;
+                }
+
+
+                trackTelemetry(
+                    "cta_click",
+                    {
+                        cta_channel:
+                            "button",
+
+                        cta_placement:
+                            cta.id ===
+                                "floatingApplicationButton"
+                                ? "floating_application"
+                                : "final_application"
+                    }
+                );
+            }
         );
 
 
@@ -4292,11 +5293,14 @@ button: Apply for the Crucible
             }
 
 
-            pausePlayback();
+            pausePlayback(
+                "url_restore"
+            );
 
 
             showSlide(
-                requestedIndex
+                requestedIndex,
+                "url_restore"
             );
         }
 
@@ -4321,8 +5325,74 @@ button: Apply for the Crucible
                     document.hidden
                 ) {
 
-                    pausePlayback();
+                    flushActiveSlideClock();
+
+
+                    trackTelemetry(
+                        "presentation_hidden"
+                    );
+
+
+                    pausePlayback(
+                        "visibility"
+                    );
+
+                } else {
+
+                    activeSlideClockStartedAt =
+                        activeSlideIndex >=
+                            0
+                            ? performance.now()
+                            : 0;
+
+
+                    trackTelemetry(
+                        "presentation_visible"
+                    );
                 }
+            }
+        );
+
+
+        window.addEventListener(
+            "pagehide",
+            () => {
+
+                trackSlideExit(
+                    currentIndex,
+                    "pagehide"
+                );
+
+
+                trackTelemetry(
+                    "presentation_session_exit",
+                    {
+                        exit_reason:
+                            "pagehide"
+                    }
+                );
+            }
+        );
+
+
+        window.addEventListener(
+            "online",
+            () => {
+
+                trackTelemetry(
+                    "presentation_connection_restored"
+                );
+            }
+        );
+
+
+        window.addEventListener(
+            "offline",
+            () => {
+
+                trackTelemetry(
+                    "presentation_connection_lost"
+                );
             }
         );
 
@@ -4474,6 +5544,11 @@ button: Apply for the Crucible
                         () => {
 
                             fitCurrentSlide();
+
+
+                            trackTelemetry(
+                                "presentation_viewport_change"
+                            );
                         },
                         100
                     );
@@ -4489,6 +5564,11 @@ button: Apply for the Crucible
                     () => {
 
                         fitCurrentSlide();
+
+
+                        trackTelemetry(
+                            "presentation_viewport_change"
+                        );
                     },
                     220
                 );
@@ -4501,6 +5581,9 @@ button: Apply for the Crucible
           INITIALIZE
           ==========================================================
         */
+
+
+        initializeTelemetry();
 
 
         rebuildPresentation(
@@ -4544,6 +5627,30 @@ button: Apply for the Crucible
                             slide
                         )
                 );
+
+
+        window.PresentationTelemetry =
+        {
+            track:
+                trackTelemetry,
+
+            updateConsent:
+                updateTelemetryConsent,
+
+            getConsent:
+                () =>
+                (
+                    {
+                        ...telemetryConsent
+                    }
+                ),
+
+            getLocalEventLog:
+                () =>
+                    [
+                        ...localTelemetryEvents
+                    ]
+        };
 
     </script>
 
