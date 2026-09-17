@@ -107,6 +107,54 @@ const renderStyles = `
     .slide {
         transition: none !important;
     }
+
+    #floatingApplication {
+        top: 48px;
+        right: 30px;
+
+        flex-direction: column;
+
+        align-items: center;
+        justify-content: center;
+
+        gap: 12px;
+
+        width: min(360px, calc(100vw - 60px));
+
+        max-width: none;
+
+        padding: 10px;
+
+        border-radius: 24px;
+    }
+
+    #floatingQrWrap {
+        width: 320px;
+        height: 320px;
+
+        flex-basis: 320px;
+
+        padding: 16px;
+
+        border-radius: 22px;
+    }
+
+    #floatingApplicationLabel {
+        font-size: 13px;
+
+        text-align: center;
+    }
+
+    #floatingApplicationButton {
+        width: 100%;
+        min-height: 48px;
+
+        padding: 10px 14px;
+
+        font-size: 14px;
+
+        border-radius: 8px;
+    }
 `;
 
 function assertFfmpegIsAvailable() {
