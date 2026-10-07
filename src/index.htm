@@ -623,6 +623,11 @@
             display: none;
         }
 
+        #musicButton[data-state="on"] .musicIcon--off,
+        #musicButton[data-state="off"] .musicIcon--on {
+            display: none;
+        }
+
         button {
             min-height: 36px;
 
@@ -1852,6 +1857,16 @@ button: Apply for the Crucible
                     </svg>
                 </button>
 
+                <button id="musicButton" class="controlButton" type="button" data-state="off" aria-pressed="false"
+                    aria-label="Enable background music" title="Enable background music">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <path class="musicIcon--on" d="M4 9v6h4l5 4V5L8 9H4z" />
+                        <path class="musicIcon--on" d="M16.5 8.5a5 5 0 0 1 0 7" />
+                        <path class="musicIcon--off" d="M4 9v6h4l5 4V5L8 9H4z" />
+                        <path class="musicIcon--off" d="M16 9l4 6M20 9l-4 6" />
+                    </svg>
+                </button>
+
             </div>
 
             <div id="playbackSpeedControl">
@@ -2140,6 +2155,12 @@ button: Apply for the Crucible
         const playbackSpeedValue =
             document.getElementById(
                 "playbackSpeedValue"
+            );
+
+
+        const musicButton =
+            document.getElementById(
+                "musicButton"
             );
 
 
@@ -4565,6 +4586,9 @@ button: Apply for the Crucible
             stopPlaybackTimers();
 
 
+            pauseMusic();
+
+
             if (
                 wasPlaying
             ) {
@@ -4619,6 +4643,9 @@ button: Apply for the Crucible
                 timingData.delay ===
                 Infinity
             ) {
+
+                fadeOutMusic();
+
 
                 isPlaying =
                     false;
@@ -4868,6 +4895,9 @@ button: Apply for the Crucible
                 "true"
             ) {
 
+                fadeOutMusic();
+
+
                 if (
                     navigationMethod ===
                     "automatic"
@@ -5005,11 +5035,17 @@ button: Apply for the Crucible
                 );
 
 
+                resumeMusic();
+
+
                 scheduleCurrentSlide();
 
             } else {
 
                 stopPlaybackTimers();
+
+
+                pauseMusic();
 
 
                 trackTelemetry(
@@ -5020,6 +5056,398 @@ button: Apply for the Crucible
                     }
                 );
             }
+        }
+
+
+        /*
+          ==========================================================
+          BACKGROUND MUSIC
+          ==========================================================
+        */
+
+
+        const musicState = {
+            started: false,
+            muted: false,
+            paused: false,
+            context: null,
+            master: null,
+            handle: null,
+            suspendTimer: null
+        };
+
+
+        function updateMusicButton() {
+
+            const isOn =
+                musicState.started &&
+                !musicState.muted;
+
+            musicButton.dataset.state =
+                isOn
+                    ? "on"
+                    : "off";
+
+            musicButton.setAttribute(
+                "aria-pressed",
+                isOn
+                    ? "true"
+                    : "false"
+            );
+
+            const label =
+                isOn
+                    ? "Mute background music"
+                    : "Enable background music";
+
+            musicButton.setAttribute(
+                "aria-label",
+                label
+            );
+
+            musicButton.title =
+                label;
+        }
+
+
+        function fadeMusicTo(
+            target,
+            seconds
+        ) {
+
+            if (
+                !musicState.master
+            ) {
+
+                return;
+            }
+
+            const now =
+                musicState.context.currentTime;
+
+            musicState.master.gain.cancelScheduledValues(
+                now
+            );
+
+            musicState.master.gain.setValueAtTime(
+                musicState.master.gain.value,
+                now
+            );
+
+            musicState.master.gain.linearRampToValueAtTime(
+                target,
+                now +
+                seconds
+            );
+        }
+
+
+        function startMusic() {
+
+            if (
+                musicState.started ||
+                !window.MusicEngine
+            ) {
+
+                return;
+            }
+
+            const AudioContextClass =
+                window.AudioContext ||
+                window.webkitAudioContext;
+
+            if (
+                !AudioContextClass
+            ) {
+
+                return;
+            }
+
+            try {
+
+                const context =
+                    new AudioContextClass();
+
+                const master =
+                    context.createGain();
+
+                master.gain.value =
+                    0;
+
+                master.connect(
+                    context.destination
+                );
+
+                const schedule =
+                    window.MusicEngine.buildMusicSchedule(
+                        {
+                            durationMs:
+                                30 *
+                                60 *
+                                1000
+                        }
+                    );
+
+                const handle =
+                    window.MusicEngine.scheduleMusic(
+                        context,
+                        master,
+                        schedule,
+                        {
+                            startTime:
+                                context.currentTime +
+                                0.05,
+                            gain:
+                                1
+                        }
+                    );
+
+                musicState.context =
+                    context;
+
+                musicState.master =
+                    master;
+
+                musicState.handle =
+                    handle;
+
+                musicState.started =
+                    true;
+
+                context.resume().catch(
+                    () => {}
+                );
+
+                fadeMusicTo(
+                    musicState.muted
+                        ? 0
+                        : window.MusicEngine.MUSIC_DEFAULTS.masterGain,
+                    window.MusicEngine.MUSIC_DEFAULTS.fadeInSec
+                );
+
+                updateMusicButton();
+
+                trackTelemetry(
+                    "music_enabled",
+                    {
+                        music_state:
+                            musicState.muted
+                                ? "muted"
+                                : "playing"
+                    }
+                );
+
+            } catch (error) {
+
+                musicState.started =
+                    false;
+            }
+        }
+
+
+        function pauseMusic() {
+
+            if (
+                !musicState.started ||
+                musicState.paused
+            ) {
+
+                return;
+            }
+
+            musicState.paused =
+                true;
+
+            fadeMusicTo(
+                0,
+                0.2
+            );
+
+            musicState.suspendTimer =
+                setTimeout(
+                    () => {
+
+                        if (
+                            musicState.context
+                        ) {
+
+                            musicState.context.suspend().catch(
+                                () => {}
+                            );
+                        }
+                    },
+                    220
+                );
+        }
+
+
+        function resumeMusic() {
+
+            if (
+                !musicState.started ||
+                !musicState.paused
+            ) {
+
+                return;
+            }
+
+            if (
+                musicState.suspendTimer
+            ) {
+
+                clearTimeout(
+                    musicState.suspendTimer
+                );
+
+                musicState.suspendTimer =
+                    null;
+            }
+
+            musicState.paused =
+                false;
+
+            musicState.context.resume().catch(
+                () => {}
+            );
+
+            fadeMusicTo(
+                musicState.muted
+                    ? 0
+                    : window.MusicEngine.MUSIC_DEFAULTS.masterGain,
+                0.5
+            );
+        }
+
+
+        function toggleMusic() {
+
+            if (
+                !musicState.started
+            ) {
+
+                startMusic();
+
+                return;
+            }
+
+            musicState.muted =
+                !musicState.muted;
+
+            fadeMusicTo(
+                musicState.muted
+                    ? 0
+                    : window.MusicEngine.MUSIC_DEFAULTS.masterGain,
+                0.4
+            );
+
+            updateMusicButton();
+
+            trackTelemetry(
+                musicState.muted
+                    ? "music_disabled"
+                    : "music_enabled",
+                {
+                    music_state:
+                        musicState.muted
+                            ? "muted"
+                            : "playing"
+                }
+            );
+        }
+
+
+        function fadeOutMusic() {
+
+            if (
+                !musicState.started
+            ) {
+
+                return;
+            }
+
+            musicState.muted =
+                true;
+
+            fadeMusicTo(
+                0,
+                window.MusicEngine.MUSIC_DEFAULTS.fadeOutSec
+            );
+
+            musicState.handle.stop(
+                window.MusicEngine.MUSIC_DEFAULTS.fadeOutSec
+            );
+
+            updateMusicButton();
+
+            setTimeout(
+                () => {
+
+                    if (
+                        musicState.context
+                    ) {
+
+                        musicState.context.close();
+                    }
+
+                    musicState.started =
+                        false;
+                },
+                window.MusicEngine.MUSIC_DEFAULTS.fadeOutSec *
+                    1000 +
+                    200
+            );
+        }
+
+
+        function armMusicGesture() {
+
+            const onGesture =
+                () => {
+
+                    window.removeEventListener(
+                        "pointerdown",
+                        onGesture
+                    );
+
+                    window.removeEventListener(
+                        "keydown",
+                        onGesture
+                    );
+
+                    window.removeEventListener(
+                        "touchstart",
+                        onGesture
+                    );
+
+                    if (
+                        !isPresentationPausedInLocation() &&
+                        !document.hidden
+                    ) {
+
+                        startMusic();
+                    }
+                };
+
+            window.addEventListener(
+                "pointerdown",
+                onGesture,
+                {
+                    passive: true
+                }
+            );
+
+            window.addEventListener(
+                "keydown",
+                onGesture
+            );
+
+            window.addEventListener(
+                "touchstart",
+                onGesture,
+                {
+                    passive: true
+                }
+            );
         }
 
 
@@ -5081,6 +5509,12 @@ button: Apply for the Crucible
         playButton.addEventListener(
             "click",
             togglePlayback
+        );
+
+
+        musicButton.addEventListener(
+            "click",
+            toggleMusic
         );
 
 
@@ -5591,6 +6025,9 @@ button: Apply for the Crucible
         );
 
 
+        armMusicGesture();
+
+
         /*
           Public hooks for future integrations.
         */
@@ -5652,7 +6089,20 @@ button: Apply for the Crucible
                     ]
         };
 
+
+        window.PresentationMusic = {
+            start: startMusic,
+            pause: pauseMusic,
+            resume: resumeMusic,
+            toggle: toggleMusic,
+            fadeOut: fadeOutMusic,
+            isMuted: () => musicState.muted,
+            isStarted: () => musicState.started
+        };
+
     </script>
+
+    <script type="module" src="music-engine.js"></script>
 
 </body>
 

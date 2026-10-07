@@ -6,6 +6,7 @@ import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { buildMusicSchedule, renderScheduleToWav } from "./src/music-engine.js";
 
 const rootDirectory =
     path.dirname(
@@ -57,6 +58,9 @@ function readPositiveNumber(
 }
 
 const settings = {
+    audioEnabled:
+        process.env.VIDEO_AUDIO !== "0",
+
     finalSlideDurationMs:
         readPositiveNumber(
             "FINAL_SLIDE_SECONDS",
@@ -466,7 +470,8 @@ async function writeConcatManifest(
 }
 
 async function runFfmpeg(
-    manifestPath
+    manifestPath,
+    audioPath
 ) {
     await mkdir(
         path.dirname(
@@ -477,22 +482,39 @@ async function runFfmpeg(
         }
     );
 
-    const argumentsList = [
-        "-y",
-        "-f",
-        "concat",
-        "-safe",
-        "0",
-        "-i",
-        manifestPath,
-        "-vf",
-        `fps=${settings.framesPerSecond},format=yuv420p`,
-        "-c:v",
-        "libx264",
-        "-movflags",
-        "+faststart",
-        settings.outputPath
-    ];
+    const argumentsList = audioPath
+        ? [
+            "-y",
+            "-f", "concat",
+            "-safe", "0",
+            "-i", manifestPath,
+            "-i", audioPath,
+            "-map", "0:v:0",
+            "-map", "1:a:0",
+            "-vf", `fps=${settings.framesPerSecond},format=yuv420p`,
+            "-c:v", "libx264",
+            "-c:a", "aac",
+            "-b:a", "192k",
+            "-shortest",
+            "-movflags", "+faststart",
+            settings.outputPath
+        ]
+        : [
+            "-y",
+            "-f",
+            "concat",
+            "-safe",
+            "0",
+            "-i",
+            manifestPath,
+            "-vf",
+            `fps=${settings.framesPerSecond},format=yuv420p`,
+            "-c:v",
+            "libx264",
+            "-movflags",
+            "+faststart",
+            settings.outputPath
+        ];
 
     await new Promise(
         (
@@ -616,6 +638,53 @@ async function main() {
             );
         }
 
+        const totalDurationMs =
+            timings.reduce(
+                (sum, timing) => sum + timing.durationMs,
+                0
+            );
+
+        let audioPath = null;
+
+        if (settings.audioEnabled) {
+            try {
+                const schedule =
+                    buildMusicSchedule({
+                        durationMs: totalDurationMs
+                    });
+
+                const wav =
+                    renderScheduleToWav(
+                        schedule,
+                        {
+                            sampleRate: 44100,
+                            channels: 2
+                        }
+                    );
+
+                audioPath =
+                    path.join(
+                        temporaryDirectory,
+                        "music.wav"
+                    );
+
+                await writeFile(
+                    audioPath,
+                    wav
+                );
+
+                console.log(
+                    `Rendered ${(wav.length / 1048576).toFixed(1)} MB of background music.`
+                );
+            } catch (error) {
+                console.warn(
+                    `Background music render failed; continuing without audio: ${error.message}`
+                );
+
+                audioPath = null;
+            }
+        }
+
         const frames =
             [];
 
@@ -676,7 +745,8 @@ async function main() {
         );
 
         await runFfmpeg(
-            manifestPath
+            manifestPath,
+            audioPath
         );
 
         console.log(
